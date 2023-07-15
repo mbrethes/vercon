@@ -124,14 +124,30 @@ d) restore the files from the tree:
         
         
 v0
-
 Let's first implement the directories organization.
+
+A1
+commit/restore basic working files+dirs
+basic CLI.
+need for a pretty commit list printer.
+
+A2
+commit/rollback safety mechanism
+prints > log system.
+BUG : filecmp.cmp says identical python files are different (try without shallow, make a real function?) --> test case necessary
+BUG : difflib.sequencematcher extremely slow (workaround idea: compare using lists of line (comparison on line basis instead of character basis, faster according to stack overflow)
+
+B1
+code refactoring
+more tests
+
 03.07: almost finished
+14.07: Alpha 1 reached - todo: safety commit mechanism for Alpha 2.
 
 
 """
 
-import os,sys,re, difflib,shutil
+import os,sys,re, difflib,shutil, filecmp
 
 class VerConError(Exception):
     pass
@@ -202,6 +218,41 @@ class VerConFile():
         self.events = {}
         self.hasE = -1
         self.lastrevision = -1
+        self.touched = False
+        
+    def __repr__(self):
+        """
+        Pretty print, for debug purposes.
+        """
+        evtl = []
+        for k,c in self.events.items():
+            evtl.append(c.__repr__())
+        return "(%s) %s : (hasE %d, last rev %d, touched %d, events %s)"%(self.frelp, self.name, self.hasE, self.lastrevision, self.touched, ", ".join(evtl))
+        
+    def isTouched(self):
+        """
+        Returns true if the file was visited during last commit (provided touch() is called...)
+        """
+        return self.touched
+        
+    def touch(self):
+        """
+        Sets self.touched to true. Marks file as processed during commit, even if no changes were made.
+        Called automatically by createAtRevision and changeAtRevision
+        """
+        self.touched = True
+        
+        
+    def getLastEventFileNameAndPath(self):
+        """
+        Returns the file name associated with the last event, for comparison purposes.
+        
+        Raises VerConError if there was no such event.
+        """
+        if len(self.events) == 0:
+            raise VerConError("This file %s has never been commited!"%self.name)
+        
+        return os.path.join(self.datap, self.frelp, self.events[self.lastrevision].fname)
         
     def getLastRevision(self):
         """
@@ -277,7 +328,7 @@ class VerConFile():
         return active
         
         
-    def ftypeAt(self, revision):
+    def fTypeAt(self, revision):
         """
         Returns "t" or "b" depending on the type of the file at that point in time.
         
@@ -515,8 +566,14 @@ class VerConFile():
                 
         self.loadEvent("e", revision, type, datafname)
         
+        stinfo = os.stat(filename)
+        
         with open(os.path.join(self.datap,self.frelp,datafname), mode) as f:
             f.write(data)
+            
+        os.utime(os.path.join(self.datap,self.frelp,datafname),ns=(stinfo.st_atime_ns, stinfo.st_mtime_ns))
+            
+        self.touch()
         
         
     def changeAtRevision(self, revision):
@@ -532,10 +589,10 @@ class VerConFile():
         There should be no revisions equal to or after revision.
         """
         if self.hasE >= revision:
-            raise VerConError("You are trying to do a commit at the same revision, or earlier as an existing commit. Please don't do that.")
+            raise VerConError("You are trying to do a commit at the same revision %d, or earlier as an existing commit %d. Please don't do that."%(revision, self.hasE))
             
         if revision <= self.lastrevision:
-            raise VerConError("You are trying to do a commit at a version <= the latest version. This is bad.")
+            raise VerConError("You are trying to do a commit at a version %d <= the latest version %d. This is bad. %s"%(revision, self.lastrevision, os.path.join(self.frelp,self.name)))
             
         if len(self.events) == 0:
             raise VerConError("You are trying to do a change to a file that has never been committed. That's a no-no")
@@ -546,7 +603,7 @@ class VerConFile():
         type,data=self.textOrBinary(filename)
 
 
-        # the most simple case, we need to copy existing E file into a H file, and create a new E file.
+        # the most simple case is for binary files: we need to copy existing E file into a H file, and create a new E file.
         if type == "b":
             # we move the previous file into history.
             if lastevent.event == "e":
@@ -574,9 +631,7 @@ class VerConFile():
             # we store the data into the new E event...
             
             datafname = "EB%d- %s"%(revision, self.name)
-
-            
-            
+       
 
         # the more complex case: text files.
         elif type == "t":
@@ -584,7 +639,7 @@ class VerConFile():
             if lastevent.event == "d":
                 pass
             elif lastevent.event == "e":
-                # if the type of the last event is binary, we just need to historicize it.
+                # if the type of the last event is binary, we just need to move the last event's file to history.
                 if lastevent.type == "b":                            
                     newnameforhistory = "HB%d- %s"%(self.lastrevision,self.name)                        
                     shutil.move(os.path.join(self.datap, self.frelp, lastevent.fname), os.path.join(self.datap, self.frelp, newnameforhistory))
@@ -627,9 +682,14 @@ class VerConFile():
          
         with open(os.path.join(self.datap, self.frelp, datafname),opentype) as f:
             f.write(data)            
+            
+        stinfo = os.stat(filename)
+        os.utime(os.path.join(self.datap,self.frelp,datafname),ns=(stinfo.st_atime_ns, stinfo.st_mtime_ns))
+        
         self.loadEvent("e", revision, type, datafname)
         self.lastrevision = revision
 
+        self.touch()
         
     def deleteAtRevision(self, revision):
         """
@@ -640,7 +700,7 @@ class VerConFile():
         Check if double delete.
         """
         if revision <= self.lastrevision:
-            raise VerConError("You are trying to do a delete at a version <= the latest version. This is bad.")
+            raise VerConError("You are trying to do a delete at a version (%d) <= the latest version (%d). This is bad."%(revision, self.lastrevision))
             
         if len(self.events) == 0:
             raise VerConError("You are trying to delete a file that has never been committed. That's a no-no")
@@ -648,7 +708,7 @@ class VerConFile():
         lastevent = self.events[self.lastrevision]
         
         if lastevent.event != "e":
-            raise VerConError("You are trying to delete an event that is either already deleted, or in a wrong state (final event is a h event instead of e or d). Aborting.")
+            raise VerConError("You are trying to delete an event that is either already deleted, or in a wrong state (final event is a h event instead of e or d). Aborting. (%s)"%self.name)
             
         bit = ""
         if lastevent.type == "b":
@@ -673,7 +733,22 @@ class VerConFile():
         self.loadEvent("d", revision, "b", newname)
         self.lastrevision = revision
         
-
+        self.touch()
+        
+    def getEventAtRevision(self, revision):
+        """
+        Returns the event associated with revision, or None if file was not modified at that point.
+        """
+        if revision in self.events.keys():
+            return self.events[revision]
+        else:
+            return None
+            
+    def isNewlyCreated(self):
+        """
+        Returns true if there is only one event.
+        """
+        return len(self.events.keys()) == 1
     
 
 class VerConDirectory():
@@ -759,9 +834,10 @@ class VerConDirectory():
 
     def addContentFile(self, path, name, fileobject):
         """
-        THis function adds a new VerConFile object to the directory, possibly to be modified afterwards.
+        This function adds a new VerConFile object to the directory, possibly to be modified afterwards.
         name : the file name, in the user's sense (not the codes in REPO/DATA).
         path : the relative path of the file.
+        fileobject : a new file object.
         
         Raises an exception if the file is already stored.
         
@@ -836,7 +912,8 @@ class VerConDirectory():
         count = 0
         
         for k,c in self.children.items():
-            if not c.isTouched():
+            # we delete active directories that are not touched.
+            if not c.isTouched() and c.isActiveAt(revision):
                 # print("%s was not touched, changing its status."%k)
                 c.toggleState(revision)
                 c.touch()
@@ -845,6 +922,13 @@ class VerConDirectory():
                 count += 1
             count += c.markUntouchedDeleted(revision)
             
+        for k,c in self.childfiles.items():
+            # we delete active files that are not touched.
+            if (not c.isTouched()) and c.existsAt(revision) :
+                # print("we delete a file")
+                c.deleteAtRevision(revision)
+                count += 1                
+            
         return count
 
     def getMaxRevision(self):
@@ -852,6 +936,12 @@ class VerConDirectory():
         Returns the maximal revision of the directory database (== last change of a directory in history)
         """
         return self.maxrevision
+        
+    def setMaxRevision(self, commitnumber):
+        """
+        Sets the maximal revision of the directory database (== last change of a directory + file in history)
+        """
+        self.maxrevision = commitnumber
 
     def getPath(self):
         """
@@ -867,22 +957,34 @@ class VerConDirectory():
             node = node.parent
             
         pathbits.reverse()
-        return os.path.join(pathbits)
+        if len(pathbits) > 1:
+            bit = pathbits[0]
+            for other in pathbits[1:]:
+                bit = os.path.join(bit, other)
+            return bit
+        elif len(pathbits) == 1:
+            return pathbits[0]
+        else:
+            return ""
         
     def atPath(self, path):
         """
         Returns a VerConDirectory pointer corresponding to the node at this path (relative to root of this directory)
         
         Raises VerConError if the path does not exist.
+        
+        if path is the empty string, returns self.
         """
-        bits = path.split(os.sep)
         curnode = self
         
-        for b in bits:
-            if b in curnode.children.keys():
-                curnode = curnode.children[b]
-            else:
-                raise VerConError("Directory %s is not in repository"%path)
+        if len(path) > 0:
+            bits = path.split(os.sep)
+            
+            for b in bits:
+                if b in curnode.children.keys():
+                    curnode = curnode.children[b]
+                else:
+                    raise VerConError("Directory '%s' is not in repository"%path)
         return curnode
         
     def getChild(self, name):
@@ -929,6 +1031,7 @@ class VerConDirectory():
         This has the effect to activate or desactivate the directory.
         """
         self.history.append(revision)
+        # print(self.getPath(), self.history)
                    
     def isCurrentlyActive(self):
         """
@@ -968,14 +1071,198 @@ class VerConDirectory():
         """
         return hash(self.getPath())
         
-    def Serialize(self,level=0):
+    def getDeleteList(self):
+        """
+        This function returns two lists of directory elements and file elements to delete.
+        
+        return: (files to delete, directories to delete)
+        """
+        fd = []
+        dd = [self]
+        #print("deleting %s"%self.getPath())
+
+        for k,f in self.childfiles.items():
+            fd.append(f)
+
+
+        for k,d in self.children.items():
+            rfd,rdd = d.getDeleteList()
+            fd.extend(rfd)
+            dd.extend(rdd)
+            
+        return (fd, dd)
+
+    def restoreListPrepare(self, revision, regexp):
+        """
+        Does the heavy lifting for restoreTo.
+        
+        Prepares four lists:
+        - list of files to delete (VerConFile)
+        - list of files to restore
+        - list of directories to delete (VerConDirectory)
+        - list of directories to create
+        
+        revision: the revision number to restore to
+        regexp: a compiled regular expression used as a filter
+        dirElement: the directory root, used to travel recursively.
+        
+        returns: a 4-uple of lists like indicated above : (files to delete, directories to delete, files to restore, directories to create)   
+        """
+        filedelete = []
+        filerestore = []
+        dirdelete = []
+        dircreate = []
+        
+        #print("Entering %s"%self.getPath())
+
+        # the directory did not exist at revision X:
+        if not self.isActiveAt(revision):
+            #print(" %s not active at %d"%(self.getPath(), revision))
+            tmpf, tmpd = self.getDeleteList()
+            filedelete.extend(tmpf)
+            dirdelete.extend(tmpd)
+        else:
+            #print(" %s active at %d"%(self.getPath(), revision))
+            # here, do something, such as listing the files etc.
+            dircreate.append(self)
+            for k,f in self.childfiles.items():
+                # process the files...
+                # we check if matches regexp (this is only checked on FILES).
+                if regexp.match(os.path.join(f.frelp, f.name)):
+                    #print("Matched %s"%os.path.join(f.frelp, f.name))
+                    if f.existsAt(revision):
+                        filerestore.append(f)
+                    else:
+                        filedelete.append(f)
+                else:
+                    #print("Did not match %s"%os.path.join(f.frelp, f.name))
+                    pass
+            for k,d in self.children.items():
+                tmpfd, tmpfr, tmpdd, tmpdc = d.restoreListPrepare(revision, regexp)
+                filedelete.extend(tmpfd)
+                filerestore.extend(tmpfr)
+                dirdelete.extend(tmpdd)
+                dircreate.extend(tmpdc)
+        
+        #print ("Leaving with:",filedelete, filerestore, dirdelete, dircreate)
+                
+        return (filedelete, filerestore, dirdelete, dircreate)
+        
+    def restoreTo(self, revision, regexp, rootdir):
+        """
+        Restores files and directories to the given revision.
+        
+        revision: the revision number to restore to
+        regexp: a compiled regular expression used as a filter
+        
+        
+        Stage 1 : browse DATA tree for matching directories and files.
+        Stage 2 : for each file found, check if currently modified or not
+        - if it is, raise exception (unless we ask to restore at last revision, which means we restore without prompting)
+        - else:
+          * if status is deleted, add file to delete list
+          * otherwise, add file to restore list
+        - for each directory found, check if currently active or not
+          * if not active, check if any files in the subhierarchy are currently modified
+          * if yes, crash and burn
+          * if no, add file to delete list
+          * add subdirs to delete list
+          * add dir to delete list
+        Stage 3:
+        - if we have not failed here, perform the deletions / restores.  
+        
+        
+        """       
+        # Stage 1.
+        filedelete, filerestore, dirdelete, dircreate = self.restoreListPrepare(revision, regexp)
+        
+        # print (filedelete, filerestore, dirdelete, dircreate)
+        
+        # Stage 2. Is something modified...
+        # Stage 2a. ... in the files to be restored or deleted?
+        for f in filerestore + filedelete:
+            try:
+                if not filecmp.cmp(os.path.join(rootdir, f.frelp, f.name), f.getLastEventFileNameAndPath()) and revision != self.getMaxRevision():
+                    raise VerConError("%s is modified after last commit ; aborting. Please revert to last commit and retry, or commit your changes and retry."%(os.path.join(f.frelp, f.name)))
+            except FileNotFoundError:
+                # if the file is not found, then we just restore it.
+                print("%s has been deleted in user space, we will just restore it as is (or ignore it)"%(os.path.join(f.frelp, f.name)))
+            
+            
+        # Stage 2b. ... in the directories to be deleted?
+        for d in dirdelete:
+            self.CheckModifiedOrNewFilesInDir(revision, rootdir, d.getPath())
+            
+        # Stage 3: let's revert stuff!
+        # 3.1 first create directories (if necessary)
+        for d in dircreate:
+            if os.path.exists(os.path.join(rootdir, d.getPath())):
+                if not os.path.isdir(os.path.join(rootdir, d.getPath())):
+                    raise VerConError("Trying to recreate %s but there is a file with the same name, aborting"%d.getPath())
+            else:
+                os.mkdir(os.path.join(rootdir, d.getPath()))
+                
+        # 3.2 then let's restore the files
+        for f in filerestore:
+            mode = "w"
+            if f.fTypeAt(revision) == "b":
+                mode = "wb"
+            with open(os.path.join(rootdir, f.frelp, f.name), mode) as out:
+                out.write(f.contentsAt(revision))
+                
+        # 3.3 finally we delete the files we don't want
+        for f in filedelete:
+            try:
+                os.unlink(os.path.join(rootdir, f.frelp, f.name))
+            except:
+                raise VerConError("Could not delete %s, are you currently editing it?"%os.path.join(f.frelp, f.name))
+                
+        # 3.4 and the directories
+        for d in dirdelete:
+            try:
+                os.rmdir(os.path.join(rootdir, d.getPath()))
+            except FileNotFoundError:
+                print("We can't remove a directory %s that has already been removed, skipping."%d.getPath())
+            except:
+                raise VerConError("Trying to remove a non-empty directory %s"%d.getPath())
+                    
+    
+    def CheckModifiedOrNewFilesInDir(self, revision, rootdir, path):
+        """
+        This helper function raises VerConError if it finds a modified file in the tree
+        under a directory that is flagged as "deletable" by restore To.
+        """
+        try:
+            for item in os.scandir(os.path.join(rootdir, path)):
+                if item.is_dir() and item.name != "REPO":
+                    try:
+                        d = self.atPath(os.path.join(path, item.name))
+                    except VerConError:
+                        raise VerConError("%s is a directory not committed to the tree. Please delete this directory or commit it. Aborting."%os.path.join(path, item.name))
+                    self.CheckModifiedOrNewFilesInDir(rootdir, os.path.join(path, item.name))
+                elif item.is_file():
+                    f = None
+                    try:
+                        f = self.findContentFile(path, item.name)                    
+                    except VerConError:
+                        raise VerConError("%s is a file not committed to the tree. Please delete this file or commit it. Aborting."%os.path.join(path, item.name))
+                    if not filecmp.cmp(os.path.join(rootdir, f.frelp, f.name), f.getLastEventFileNameAndPath()) and revision != self.getMaxRevision():
+                        raise VerConError("%s has been modified since last commit, please revert or commit changes."%os.path.join(path, item.name))
+        except FileNotFoundError:
+            print("It seems that %s is not present in user space, skipping."%os.path.join(rootdir, path))
+        
+    def Serialize(self,level=-1, debug=False):
         """
         Returns a list of lines that can then be written into a file.
+        
+        If debug is true, also prints the list of files in the repository.
         """
         lines = []
-        for k in sorted(self.children.keys()):
-            name = self.children[k].name
-            history = self.children[k].history
+        
+        # if we are at root, we skip this.
+        if self.name != "":        
+            name = self.name
+            history = self.history
             line = "%s"%(' '*level)
             h=[]
             for i in history:
@@ -983,17 +1270,61 @@ class VerConDirectory():
             line += ",".join(h)
             line += " %s"%name
             lines.append(line)
-            if self.children[k].hasChildren():
-                lines.extend(self.children[k].Serialize(level + 1))
         
-        return lines
-            
+        if debug:
+            for f in sorted(self.childfiles.keys()):
+                lines.append("%s- %s"%(' '*level, self.childfiles[f].__repr__()))      
+        if self.hasChildren():                
+            for k in sorted(self.children.keys()):
+                lines.extend(self.children[k].Serialize(level + 1, debug=debug))
+
+        return lines    
         
     def __repr__(self):
         """ Pretty printout """
 
         return  "\n".join(self.Serialize())
         
+        
+    def generateCommitLog(self, lastcommit):
+        """
+        Generates the log file and appends it to REPO/commits.txt
+        
+        Should be called at the end of each commit.
+        
+        dirdb: the current root.
+        
+        returns a list of lines to write to commits.txt.
+        """
+        
+        lines = []
+        
+        if self.name != "":
+            if self.history[-1] == lastcommit:
+                if len(self.history) %2 == 0:
+                    lines.append("  -d %s"%self.name)
+                else:
+                    lines.append("  +d %s"%self.name)                    
+        for k,f in sorted(self.childfiles.items()):
+            e = f.getEventAtRevision(lastcommit)
+            if e != None:
+                token = ""
+                if e.event == "e":
+                    if f.isNewlyCreated():
+                        token = "+f%s"%e.type
+                    else:
+                        token = "*f%s"%e.type
+                elif e.event == "h":
+                    # pass, but this should not happen.
+                    pass
+                else:
+                    token = "-f"
+                lines.append("  %s %s"%(token, os.path.join(f.frelp,f.name)))
+        for k, d in sorted(self.children.items()):
+            lines.extend(d.generateCommitLog(lastcommit))
+        
+        # print(lines)
+        return lines
 
 class VerConRepository():
     """
@@ -1007,7 +1338,7 @@ class VerConRepository():
         self.repodir = None
         self.basedir = None
         self.datadir = None
-        self.lastcommit = None
+        self.lastcommit = 0
         self.dirDb = None
         
         path = os.path.abspath(directory)
@@ -1022,7 +1353,9 @@ class VerConRepository():
                 with open(os.path.join(self.repodir, "metadatadir.txt"),"r") as f:
                     self.dirDb   = VerConDirectory(f.readlines())
                     self.precomputeFileDB(self.datadir, "")
-                    self.lastcommit = self.dirDb.getMaxRevision()
+                    
+                    self.lastcommit = max(self.dirDb.getMaxRevision(), self.lastcommit)
+                    self.dirDb.setMaxRevision(self.lastcommit)
                     
 
         if self.repodir == None:
@@ -1036,7 +1369,6 @@ class VerConRepository():
             with open(os.path.join(self.repodir, "commits.txt"),"w") as f:
                 f.close()
             self.dirDb = VerConDirectory([])
-            self.lastcommit = 0
             
     def getRepoDir(self):
         """
@@ -1067,32 +1399,52 @@ class VerConRepository():
             creates new repository in directory if none found.
         """
 
-        # Stage 0 : precompute file database.
+        # Stage 0 : precompute file database. Now done in constructor.
         # self.precomputeFileDB(self.getDataDir(), "")
         
-        # Stage 1 : check directories
+        # Stage 1 : check directories and files
+        # print("Commit number %d"%self.lastcommit)
         newcommit = self.commitDirectories(self.lastcommit, self.getBaseDir(), "")
         
-        # Stage 2 : if something changed, save directory database.
+        # Stage 2 : check if anything is to be deleted:
+        count = self.dirDb.markUntouchedDeleted(self.lastcommit + 1)
+        if count > 0:
+            haschanged = True
+            newcommit = self.lastcommit + 1
+
+        # Stage 3 : if something changed, save directory database.
         if newcommit > self.lastcommit:
             self.lastcommit = newcommit
+                        
             with open(os.path.join(self.repodir, "metadatadir.txt"),"w") as f:
                 f.write(self.dirDb.__repr__())
-                
-        # Stage 3 : new files? Deleted files? Changed files?
+                       
+            lines = ["%d. %s"%(self.lastcommit, comment)]
         
-        # TODO TODO TODO
-
+            lines.extend(self.dirDb.generateCommitLog(self.lastcommit))
+            
+            with open(os.path.join(self.repodir, "commits.txt"), "a") as f:
+                f.write("\n".join(lines))
+                f.write("\n\n")
+                
+                               
+            
         
     def commitDirectories(self, commitnumber, baseDir, relPath):
         """
         Checks for directories and adds, commits, or deletes them depending on their situation.
+        
+        For each directory, checks if files were modified. If so, commits the file change, depending on the situation.
+        Files in deleted directories will be marked as deleted.
         
         Returns the commit number : same as commitnumber if nothing changed, commitnumber+1 if something changed.
         """
         haschanged = False
         newcommit = commitnumber + 1
         hasrepo = False
+        
+        # this is the root directory (relative to where we are talking about).
+        rdir = self.dirDb.atPath(relPath)
         
         for item in os.scandir(baseDir):
             if item.is_dir() and item.name != "REPO":
@@ -1101,9 +1453,14 @@ class VerConRepository():
                     dir = self.dirDb.atPath(os.path.join(relPath, item.name))
                     #print("It exists, continue.")
                     if not dir.isCurrentlyActive():
+                        # print("reactivating %s"%dir.getPath())
                         dir.toggleState(newcommit)
                         haschanged = True
                         dir.touch()
+                    # it already exists and is already active, we just touch it.
+                    else:
+                        dir.touch()
+                    
                 except VerConError:
                     # the directory did not exist, we create it in the db + physically in REPO/DATA
                     dir = self.dirDb.Add(os.path.join(relPath, item.name),newcommit)
@@ -1116,15 +1473,35 @@ class VerConRepository():
                 commit = self.commitDirectories(commitnumber, os.path.join(baseDir, item.name), os.path.join(relPath, item.name))
                 if commit != commitnumber:
                     haschanged = True
-
-        count = self.dirDb.markUntouchedDeleted(newcommit)
-        if count > 0:
-            haschanged = True
-            
+            # let's handle file changes.
+            elif item.is_file():
+                fobj = rdir.findContentFile("", item.name)
+                # file is already in database, let's see if it was modified...
+                if fobj != None:
+                    #print("Found file %s (working in %s)"%(fobj, relPath))
+                    if not filecmp.cmp(os.path.join(self.getBaseDir(), relPath, item.name), fobj.getLastEventFileNameAndPath()):
+                        #print("- %s has changed."%fobj)
+                        fobj.changeAtRevision(newcommit)
+                        #print("- %s is now this"%fobj)
+                        haschanged = True
+                    else:
+                        # we touch fobj, so as to avoid its deletion.
+                        # but the directory has not changed.
+                        #print("- %s has not changed."%fobj)
+                        fobj.touch()
+                # file not in database, we just add it...
+                else:
+                    fobj = VerConFile(item.name, self.getBaseDir(), self.getDataDir(), relPath)
+                    fobj.createAtRevision(newcommit)
+                    rdir.addContentFile("", item.name, fobj)
+                    # print("we add file %s"%item.name)
+                    haschanged = True
+                            
         if haschanged:
             return newcommit
         else:
             return commitnumber
+            
         
                                     
     def list(self, verbose=0):
@@ -1145,19 +1522,33 @@ class VerConRepository():
                         data.append(line)
         return "".join(data)
         
-    def restoreTo(self, revision=None, filter=""):
+    def restoreTo(self, revision=None, filter=".*"):
         """ reverts change to a given revision.
         
         revision : if omitted, the repository is refreshed to last commit.
                     otherwise will revert to a previous commit, indicated by number
                     (note : using number of last commit has same effect as "cur")
+                    if the revision to be reverted is equal to the last commit,
+                    then the files will forcibly be erased, even if they were modified.
+                    
+                    Otherwise an exception will be raised if files to be reverted have been modified after
+                    last commit.
         filter: a regular expression that will match file(s) or directory(ies) to be reverted.
-                    paths are always Unix (slashes)
-            # NOT IMPLEMENTED
+                    This matches to the path. THe default will match all files and directories.
         """
         
-        # TODO TODO TODO
-        pass
+        if revision == None or revision == self.lastcommit:
+            revision = self.lastcommit
+        
+        if revision > self.lastcommit or revision <= 0:
+            raise VerConError("Trying to revert to a revision %d that has not been yet created"%revision)
+        
+        try:
+            match = re.compile(filter, re.I)
+        except re.error:
+            raise VerConError("Invalid filter provided %s"%filter)
+        
+        self.dirDb.restoreTo(revision, match, self.getBaseDir())
         
     def precomputeFileDB(self,dataDir, relPath):
         """
@@ -1177,9 +1568,11 @@ class VerConRepository():
                 if match != None:
                     evt = match.group(1)
                     rev = int(match.group(2))
-                    #if rev > self.lastcommit:
-                    #    self.lastcommit = rev
                     name = match.group(3)
+                    
+                    if rev > self.lastcommit:
+                        self.lastcommit = rev
+                        # print("self.lastcommit is now at revision %d"%rev)
                     
                     obj = self.getFileObject(relPath, name)
                     
@@ -1212,7 +1605,44 @@ class VerConRepository():
         path is relative to root of tree (without ".")"""
         
         return self.dirDb.findContentFile(path, name)
+        
+    def __repr__(self):
+        """
+        Pretty print, for debug purposes.
+        """
+        return "VerConRepository: last revision %d, directory database:\n%s"%(self.lastcommit, "\n".join(self.dirDb.Serialize(debug=True)))
 
         
 if __name__ == "__main__":
-    print("The future is bright!")
+    usagestring = "Usage: %s commit comment\n%s revert [revision number [filter (a regular expression)]]\n %s list [verbose]"%(sys.argv[0],sys.argv[0],sys.argv[0])
+    if len(sys.argv) == 1:
+        print(usagestring)
+    else:
+        if sys.argv[1].lower() == "commit":
+            if len(sys.argv) == 2:
+                print(usagestring)
+            else:
+                comment = " ".join(sys.argv[2:])
+                vc = VerConRepository(".")
+                vc.commit(comment)
+                
+        elif sys.argv[1].lower() == "revert":
+            revision = None
+            filter = ".*"
+            if len(sys.argv) == 3:
+                revision = int(sys.argv[2])
+            if len(sys.argv) == 4:
+                filter = sys.argv[4]
+
+            vc = VerConRepository(".")
+            vc.revertTo(revision, filter)
+
+        elif sys.argv[1].lower() == "list":
+            vc = VerConRepository(".")
+            if len(sys.argv) == 3 and sys.argv[3].lower() == "verbose":
+                vc.list(1)
+            else:
+                vc.list()
+        else:
+            print(usagestring)
+            

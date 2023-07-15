@@ -1,5 +1,5 @@
 I am a valid utf-8 file.
 
-ééàà
-
 und so weiter.
+
+â‚¬ euro.

@@ -146,8 +146,8 @@ class TestLogging(unittest.TestCase):
         datadir = os.path.join(repodir, "DATA")
         os.mkdir(repodir)
         os.mkdir(datadir)
-        logdata = "1. initial commit\n  +file A\n2. second commit\n  +file B"
-        minlogd = "1. initial commit\n2. second commit\n"
+        logdata = "1. initial commit\n  +file A\n\n2. second commit\n  +file B"
+        minlogd = "1. initial commit\n\n2. second commit\n"
         with open(os.path.join(repodir, "metadatadir.txt"),"w") as f:
             f.write("1 bleh")
         with open(os.path.join(repodir, "commits.txt"),"w") as f:
@@ -155,8 +155,47 @@ class TestLogging(unittest.TestCase):
         rep = VerConRepository(self.tempDir.name)
         
         self.assertEqual(logdata, rep.list(1), "Verbose data incorrect")
-        self.assertEqual(minlogd, rep.list(), "non-verbose data incorrect")                
+        self.assertEqual(minlogd, rep.list(), "non-verbose data incorrect")     
 
+    def test_generateLog(self):
+        """
+        Checks whether the program generates a log file with proper data information.
+        """
+        os.mkdir(os.path.join(self.tempDir.name, "test"))
+        with open(os.path.join(self.tempDir.name, "test", "foo.txt"), "w") as f:
+            f.write("foo")
+        with open(os.path.join(self.tempDir.name, "bar.txt"), "w") as f:
+            f.write("bar")   
+        with open(os.path.join(self.tempDir.name, "baz.txt"), "wb") as f:
+            f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
+
+        rep = VerConRepository(self.tempDir.name)
+        rep.commit("initial commit")
+        
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r") as f:
+            self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n"%os.sep)
+            
+        with open(os.path.join(self.tempDir.name, "bar.txt"), "w") as f:
+            f.write("bar2")   
+        with open(os.path.join(self.tempDir.name, "baz.txt"), "wb") as f:
+            f.write(bytes.fromhex("FFFF 0000 DEAD BEEF FFFF"))    
+
+        rep = VerConRepository(self.tempDir.name)
+        rep.commit("commit for things")
+
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r") as f:
+            self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n2. commit for things\n  *ft bar.txt\n  *fb baz.txt\n\n"%os.sep)
+            
+        os.unlink(os.path.join(self.tempDir.name, "test", "foo.txt"))
+        os.rmdir(os.path.join(self.tempDir.name, "test"))
+        
+        rep = VerConRepository(self.tempDir.name)
+        rep.commit("third commit")
+        
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r") as f:
+            self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n2. commit for things\n  *ft bar.txt\n  *fb baz.txt\n\n3. third commit\n  -d test\n  -f test%sfoo.txt\n\n"%(os.sep, os.sep))
+         
+         
 class TestVerConDirectory(unittest.TestCase):
     """
     Unit tests checking if the VerConDirectory class properly works.
@@ -217,6 +256,14 @@ class TestVerConDirectory(unittest.TestCase):
         self.assertFalse(revrev.atPath("test").isActiveAt(4))       
         self.assertTrue(revrev.atPath("test").isActiveAt(5))   
         self.assertTrue(revrev.atPath("test").isActiveAt(6))           
+        
+        revrev = VerConDirectory(["1,2,3,4 test"])
+        self.assertFalse(revrev.atPath("test").isCurrentlyActive())
+        self.assertTrue(revrev.atPath("test").isActiveAt(1))
+        self.assertFalse(revrev.atPath("test").isActiveAt(2))
+        self.assertTrue(revrev.atPath("test").isActiveAt(3))      
+        self.assertFalse(revrev.atPath("test").isActiveAt(4))       
+        self.assertFalse(revrev.atPath("test").isActiveAt(5))   
         
     def test_child(self):
         """
@@ -475,6 +522,8 @@ class TestCommitFiles(unittest.TestCase):
             
         vc.commit("no reason")
         
+        #print(vc)
+        
         if not nocheck:
             self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "ET1- textfile.txt")), "ET1- textfile.txt not created in REPO/DATA")
             self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "EB1- binfile.bin")), "EB1- binfile.bin not created in REPO/DATA")       
@@ -497,24 +546,9 @@ class TestCommitFiles(unittest.TestCase):
         os.unlink(os.path.join(self.tempDir.name, "textfile.txt"))
         os.unlink(os.path.join(self.tempDir.name, "binfile.bin"))
         
-        # what is the sequence of operations to transform new revision ("") into old revision (datat)?
-        differ = difflib.SequenceMatcher(a="", b=datat)
-        data = differ.get_opcodes()
-        datah = []
-        for tag, i1, i2, j1, j2 in data:
-            if tag == "insert":
-                datah.append("i %d\n%s"%(j2-j1, datat[j1:j2]))
-            elif tag == "replace":
-                datah.append("s %d"%(i2-i1))
-                datah.append("i %d\n%s"%(j2-j1, datat[j1:j2]))
-            elif tag == "delete":
-                datah.append("s %d"%(i2-i1))
-            else:
-                datah.append("c %d"%(i2-i1))
-        datah = "\n".join(datah)
-        # print(datah)
-        
         vc = VerConRepository(self.tempDir.name)
+        
+        #print(vc)
         vc.commit("deleted those files")
 
 
@@ -532,7 +566,7 @@ class TestCommitFiles(unittest.TestCase):
             self.assertEqual(f.read(), "")        
 
         with open(   os.path.join(vc.getDataDir(), "HT1- textfile.txt"),"r") as f:
-            self.assertEqual(f.read(), datah)
+            self.assertEqual(f.read(), datat)
             
         with open(os.path.join(vc.getDataDir(), "HB1- binfile.bin"), "rb") as f:
             self.assertEqual(f.read(), datab)
@@ -583,6 +617,10 @@ class TestCommitFiles(unittest.TestCase):
 
         vc = VerConRepository(self.tempDir.name)
         vc.commit("no reason")
+        
+        #for root, dirs, files in os.walk(self.tempDir.name):
+        #    for f in files:
+        #        print(os.path.join(root,f))
         
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "ET1- testutf8.txt")), "ET1- testutf8.txt not created in REPO/DATA")
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "EB1- binfile.bin")), "EB1- binfile.bin not created in REPO/DATA")             
@@ -644,55 +682,55 @@ class TestCommitFiles(unittest.TestCase):
 
         # now...
         self.assertTrue(vc.getFileObject("","tes1").existsAt(1))
-        self.assertEqual(vc.getFileObject("","tes1").ftypeAt(1),"t")
+        self.assertEqual(vc.getFileObject("","tes1").fTypeAt(1),"t")
         self.assertEqual(vc.getFileObject("","tes1").contentsAt(1),"test")
         
         self.assertTrue(vc.getFileObject("","bin1").existsAt(1))
-        self.assertEqual(vc.getFileObject("","bin1").ftypeAt(1),"b")
+        self.assertEqual(vc.getFileObject("","bin1").fTypeAt(1),"b")
         self.assertEqual(vc.getFileObject("","bin1").contentsAt(1),bytes.fromhex("0000 FFFF 1010 1111"))
         
         self.assertTrue(vc.getFileObject("","tes2").existsAt(1))
-        self.assertEqual(vc.getFileObject("","tes2").ftypeAt(1),"t")
+        self.assertEqual(vc.getFileObject("","tes2").fTypeAt(1),"t")
         self.assertEqual(vc.getFileObject("","tes2").contentsAt(1),"foo")        
         
         self.assertTrue(vc.getFileObject("","tes2").existsAt(2))
-        self.assertEqual(vc.getFileObject("","tes2").ftypeAt(2),"t")
+        self.assertEqual(vc.getFileObject("","tes2").fTypeAt(2),"t")
         self.assertEqual(vc.getFileObject("","tes2").contentsAt(2),"bar")     
 
         self.assertTrue(vc.getFileObject("","bin2").existsAt(1))
-        self.assertEqual(vc.getFileObject("","bin2").ftypeAt(1),"b")
+        self.assertEqual(vc.getFileObject("","bin2").fTypeAt(1),"b")
         self.assertEqual(vc.getFileObject("","bin2").contentsAt(1),bytes.fromhex("0000 0101 FFFF 1111"))    
 
         self.assertTrue(vc.getFileObject("","bin2").existsAt(2))
-        self.assertEqual(vc.getFileObject("","bin2").ftypeAt(2),"b")
+        self.assertEqual(vc.getFileObject("","bin2").fTypeAt(2),"b")
         self.assertEqual(vc.getFileObject("","bin2").contentsAt(2),(bytes.fromhex("1111 FFFF 0101 0000") ))
         
         self.assertTrue(vc.getFileObject("","tes3").existsAt(1))
-        self.assertEqual(vc.getFileObject("","tes3").ftypeAt(1),"t")
+        self.assertEqual(vc.getFileObject("","tes3").fTypeAt(1),"t")
         self.assertEqual(vc.getFileObject("","tes3").contentsAt(1),"test")        
         
         self.assertFalse(vc.getFileObject("","tes3").existsAt(2))
         
         self.assertTrue(vc.getFileObject("","tes4").existsAt(1))
-        self.assertEqual(vc.getFileObject("","tes4").ftypeAt(1),"b")
+        self.assertEqual(vc.getFileObject("","tes4").fTypeAt(1),"b")
         self.assertEqual(vc.getFileObject("","tes4").contentsAt(1),bytes.fromhex("0000 0101 FFFF 1111") )        
         
         self.assertFalse(vc.getFileObject("","tes4").existsAt(2))
         
         self.assertTrue(vc.getFileObject("","tes5").existsAt(1))
-        self.assertEqual(vc.getFileObject("","tes5").ftypeAt(1),"b")
+        self.assertEqual(vc.getFileObject("","tes5").fTypeAt(1),"b")
         self.assertEqual(vc.getFileObject("","tes5").contentsAt(1),bytes.fromhex("0000 FFFF 1010 1111") )        
         
         self.assertTrue(vc.getFileObject("","tes5").existsAt(2))
-        self.assertEqual(vc.getFileObject("","tes5").ftypeAt(2),"t")
+        self.assertEqual(vc.getFileObject("","tes5").fTypeAt(2),"t")
         self.assertEqual(vc.getFileObject("","tes5").contentsAt(2),"test")     
         
         self.assertTrue(vc.getFileObject("","tes6").existsAt(1))
-        self.assertEqual(vc.getFileObject("","tes6").ftypeAt(1),"t")
+        self.assertEqual(vc.getFileObject("","tes6").fTypeAt(1),"t")
         self.assertEqual(vc.getFileObject("","tes6").contentsAt(1),"test")   
         
         self.assertTrue(vc.getFileObject("","tes6").existsAt(2))
-        self.assertEqual(vc.getFileObject("","tes6").ftypeAt(2),"b")
+        self.assertEqual(vc.getFileObject("","tes6").fTypeAt(2),"b")
         self.assertEqual(vc.getFileObject("","tes6").contentsAt(2),bytes.fromhex("0000 0101 FFFF 1111") )        
           
         
@@ -705,10 +743,193 @@ class TestRetrievePreviousData(unittest.TestCase):
     def setUp(self):
         self.tempDir = tempfile.TemporaryDirectory()
         self.datat = "some text\nextra text\n"
-        self.datab = bytes.fromhex('d3ad b33f 0100 0011')
+        self.datat2 = "new text\nextra text"
+        self.datab = bytes.fromhex('d3ad b33f FFFF 0011')
+        self.datab2 = bytes.fromhex('d3ad FFFF 0000 0011')
+
         
     def tearDown(self):
         self.tempDir.cleanup()
+        
+    def test_restoreToLastRevision(self):
+        """
+        Tests if when we restore to the last revision, files modified are overwritten.
+        """
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 1")
+        
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write(self.datat2)    
+
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 2")       
+
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write("moo")
+
+        vc = VerConRepository(self.tempDir.name)
+        
+        # this should not yield an exception.
+        vc.restoreTo()
+        
+        # file should be reverted.
+        with open(os.path.join(self.tempDir.name,"test.txt"), "r") as f:      
+            self.assertEqual(f.read(), self.datat2)
+        
+        
+    def test_restoreDeletedMultipleWithFilter(self):
+        """
+        Test if the filter works and if restores does not crash when:
+        
+        - user asks for restoring A
+        - A exists in dir/A and dir2/A
+        - dir2/A does not exist at revision
+        
+        when restored, dir2/A should not be restored.
+        """
+        os.mkdir(os.path.join(self.tempDir.name, "dir1"))
+        os.mkdir(os.path.join(self.tempDir.name, "dir2"))
+
+        
+        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w") as f:
+            f.write(self.datat)
+        with open(os.path.join(self.tempDir.name,"dir2", "test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 1")
+        
+        os.unlink(os.path.join(self.tempDir.name,"dir2", "test.txt"))
+        os.rmdir(os.path.join(self.tempDir.name,"dir2"))
+        
+        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w") as f:
+            f.write(self.datat2)
+
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 2")
+
+        os.mkdir(os.path.join(self.tempDir.name, "dir2"))
+        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w") as f:
+            f.write(self.datat)
+        with open(os.path.join(self.tempDir.name,"dir2", "test.txt"), "w") as f:
+            f.write(self.datat)
+
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 3")
+        
+        vc = VerConRepository(self.tempDir.name)
+        vc.restoreTo(2, "test")
+        
+        self.assertFalse(os.path.isdir(os.path.join(self.tempDir.name, "dir2")))
+
+        pass
+        
+    def test_restoreWhatCouldPossiblyGoWrong(self):
+        """
+        Ensure test fails if:
+        -         filter is not a valid RE.
+        - revert to higher revision than final and < 1
+        """
+       
+        
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 1")
+
+        vc = VerConRepository(self.tempDir.name)
+        with self.assertRaises(VerConError):
+            vc.restoreTo(2)
+            
+        with self.assertRaises(VerConError):
+            vc.restoreTo(0)
+
+        with self.assertRaises(VerConError):
+            vc.restoreTo(1, "(.*")            
+        
+        
+    def test_restoreFilter(self):
+        """
+        ensure filter works.
+        """
+        os.mkdir(os.path.join(self.tempDir.name, "dir"))
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat)
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 1")
+        #print(vc)
+        
+        #for root, dirs, files in os.walk(self.tempDir.name):
+        #    for f in files:
+        #        print(os.path.join(root, f))
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat2)
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "w") as f:
+            f.write(self.datat2)
+            
+        vc = VerConRepository(self.tempDir.name)
+        #print(vc)
+        #print("ok let's try to commit now")
+        vc.commit("revision 2")
+        
+        vc = VerConRepository(self.tempDir.name)
+        vc.restoreTo(1,"^test") # should not restore dir/test.txt
+
+        with open(os.path.join(self.tempDir.name, "test.txt"), "r") as f:
+            self.assertEqual(f.read(), self.datat)
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "r") as f:
+            self.assertEqual(f.read(), self.datat2)
+            
+
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 3")    
+
+        vc = VerConRepository(self.tempDir.name)
+        # print("^%s"%os.path.join("dir","test").replace("\\","\\\\"))
+        vc.restoreTo(1,"^%s"%os.path.join("dir","test").replace("\\","\\\\")) # should only restore dir/test.txt        
+
+        with open(os.path.join(self.tempDir.name, "test.txt"), "r") as f:
+            self.assertEqual(f.read(), self.datat)
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "r") as f:
+            self.assertEqual(f.read(), self.datat)
+
+        
+        
+    def test_failsIfModified(self):
+        """
+        ensure restore does not happen if files were modified and not yet committed, AND
+        ensure the files are not restored anyway.
+        """
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 1")
+        
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write(self.datat2)    
+
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("revision 2")       
+
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+            f.write("moo")
+            
+        vc = VerConRepository(self.tempDir.name)
+        with self.assertRaises(VerConError):
+            vc.restoreTo(1)
+        
+        with open(os.path.join(self.tempDir.name,"test.txt"), "r") as f:
+            self.assertEqual(f.read(),"moo")
         
     def test_twoCommitsAndARestoreText(self):
         """
@@ -808,7 +1029,7 @@ class TestRetrievePreviousData(unittest.TestCase):
 
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(1)
-        self.assertFalse(os.path.join(self.tempDir.name, "test2"), "test2 should not exist yet at revision 1")     
+        self.assertFalse(os.path.isdir(os.path.join(self.tempDir.name, "test2")), "test2 should not exist yet at revision 1")     
 
     def test_fileDeletedText(self):
         """
@@ -1056,7 +1277,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         
         self.assertTrue(os.path.isfile(os.path.join(self.tempDir.name, "binfile.bin")))
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "rb") as f:
-            self.assertEqual(f.read(), datat)           
+            self.assertEqual(f.read(), datab)           
         
     def test_fileRestoreBetweenRevisionsText_DeleteBefore(self):
         """
@@ -1129,16 +1350,21 @@ class TestRetrievePreviousData(unittest.TestCase):
         here test is created at revision 1 and deleted at revision 3, we restore to revision 2: it should be there.
         """
         
+
         os.mkdir(os.path.join(self.tempDir.name, "test"))
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 1")
+
         os.mkdir(os.path.join(self.tempDir.name, "test2"))
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 2")      
+     
+
         os.rmdir(os.path.join(self.tempDir.name, "test"))
         os.mkdir(os.path.join(self.tempDir.name, "test3"))
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 3")     
+
 
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(2)
@@ -1162,6 +1388,9 @@ class TestRetrievePreviousData(unittest.TestCase):
         os.mkdir(os.path.join(self.tempDir.name, "test3"))
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 3")   
+        
+        vc = VerConRepository(self.tempDir.name)
+        # print(vc)
         os.mkdir(os.path.join(self.tempDir.name, "test"))        
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 4")   
@@ -1310,7 +1539,7 @@ class testVerConFile(unittest.TestCase):
         self.assertFalse(f.existsAt(4))     
 
         
-    def test_ftypeAt(self):
+    def test_fTypeAt(self):
         """
         Checks "t" or "b" is correctly returned depending on circumstances.
         
@@ -1320,10 +1549,10 @@ class testVerConFile(unittest.TestCase):
         f.loadEvent("h",2,"t","foo")
         f.loadEvent("e",4,"b","foo")
         
-        self.assertEqual(f.ftypeAt(2), "t")
-        self.assertEqual(f.ftypeAt(3), "t")
-        self.assertEqual(f.ftypeAt(4), "b")
-        self.assertEqual(f.ftypeAt(5), "b")
+        self.assertEqual(f.fTypeAt(2), "t")
+        self.assertEqual(f.fTypeAt(3), "t")
+        self.assertEqual(f.fTypeAt(4), "b")
+        self.assertEqual(f.fTypeAt(5), "b")
         
     def test_contentAtLastRevision(self):
         """
@@ -1550,7 +1779,7 @@ class testVerConFile(unittest.TestCase):
         vcf = VerConFile("test.tst", self.rootDir, self.dataDir, "")
         vcf.createAtRevision(1)
         
-        self.assertEqual(vcf.ftypeAt(1), "b")
+        self.assertEqual(vcf.fTypeAt(1), "b")
 
         with self.assertRaises(VerConError):
             vcf.createAtRevision(2)
