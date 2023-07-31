@@ -10,7 +10,7 @@ Released under GPL v3.
 (c) 2023 by Mathieu Brèthes
 """
 
-import unittest, os, tempfile, difflib,shutil
+import unittest, os, tempfile, difflib,shutil, time
 from vc import VerConRepository, VerConDirectory, VerConError, VerConFile
 
 class TestConstructor(unittest.TestCase):
@@ -1910,6 +1910,204 @@ class testVerConFile(unittest.TestCase):
         self.assertEqual(vcf.calculateDelta("foo","boo"),"s 1\ni 1\nb\nc 2")
         self.assertEqual(vcf.calculateDelta("","boo"),"i 3\nboo")
         self.assertEqual(vcf.calculateDelta("foo",""),"s 3")
+
+    def test_isModified_FalseWhenNoModifications_DateSimilar_Text(self):
+        """
+        Ensures file comparison works in case the two files are identical and have same metadata
+        """
+        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+            f.write("Similar")
+        
+        # copy also metadata such as creation time and date
+        shutil.copy2(os.path.join(self.rootDir, "test.txt"),os.path.join(self.dataDir, "ET1- test.txt"))
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"t","ET1- test.txt")
+        
+        self.assertFalse(vcf.isModified())
+        
+    def test_isModified_FalseWhenNoModifications_DifferentDates_Text(self):
+        """
+        Ensures files comparison checks content of file if date differ and report it was not modified.
+        """
+
+        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+            f.write("Similar")
+        
+        time.sleep(2)
+        # copy also metadata such as creation time and date
+        shutil.copy(os.path.join(self.rootDir, "test.txt"),os.path.join(self.dataDir, "ET1- test.txt"))
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"t","ET1- test.txt")
+        
+        self.assertFalse(vcf.isModified())       
+
+
+    def test_isModified_TrueWhenModifications_DateSimilar_Text(self):
+        """
+        Ensures file comparison works in case the two files are different, but have same metadata
+        """
+        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+            f.write("Similar")
+        
+        with open(os.path.join(self.dataDir, "ET1- test.txt"), "w") as f:
+            f.write("Differe")
+
+        stinfo = os.stat(os.path.join(self.rootDir, "test.txt"))
+        os.utime(os.path.join(self.dataDir, "ET1- test.txt"),ns=(stinfo.st_atime_ns, stinfo.st_mtime_ns)) 
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"t","ET1- test.txt")
+        
+        self.assertTrue(vcf.isModified())        
+        
+        
+    def test_isModified_TrueWhenModifications_DateSimilar_Text(self):
+        """
+        Ensures file comparison works in case the two files are different and do not have same metadata
+        """
+        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+            f.write("Similar")
+            
+        time.sleep(2)
+        
+        with open(os.path.join(self.dataDir, "ET1- test.txt"), "w") as f:
+            f.write("Differe")
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"t","ET1- test.txt")
+        
+        self.assertTrue(vcf.isModified())        
+
+    def test_isModified_FalseWhenNoModifications_DateSimilar_Binary(self):
+        """
+        Ensures file comparison works in case the two files are identical and have same metadata
+        """
+        with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
+            f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
+        
+        # copy also metadata such as creation time and date
+        shutil.copy2(os.path.join(self.rootDir, "test.txt"),os.path.join(self.dataDir, "EB1- test.txt"))
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"b","EB1- test.txt")
+        
+        self.assertFalse(vcf.isModified())
+        
+    def test_isModified_FalseWhenNoModifications_DifferentDates_Binary(self):
+        """
+        Ensures files comparison checks content of file if date differ and report it was not modified.
+        """
+
+        with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
+            f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
+        
+        time.sleep(2)
+        # copy also metadata such as creation time and date
+        shutil.copy(os.path.join(self.rootDir, "test.txt"),os.path.join(self.dataDir, "EB1- test.txt"))
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"b","EB1- test.txt")
+        
+        self.assertFalse(vcf.isModified())       
+
+
+    def test_isModified_TrueWhenModifications_DateSimilar_Binary(self):
+        """
+        Ensures file comparison works in case the two files are different, but have same metadata
+        """
+        with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
+            f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
+        
+        with open(os.path.join(self.dataDir, "EB1- test.txt"), "wb") as f:
+            f.write(bytes.fromhex("0000 FFFF 0000 FFFF"))
+
+        stinfo = os.stat(os.path.join(self.rootDir, "test.txt"))
+        os.utime(os.path.join(self.dataDir, "EB1- test.txt"),ns=(stinfo.st_atime_ns, stinfo.st_mtime_ns)) 
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"b","EB1- test.txt")
+        
+        self.assertTrue(vcf.isModified())        
+        
+        
+    def test_isModified_TrueWhenModifications_DateSimilar_Binary(self):
+        """
+        Ensures file comparison works in case the two files are different and do not have same metadata
+        """
+        with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
+            f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
+            
+        time.sleep(2)
+        
+        with open(os.path.join(self.dataDir, "EB1- test.txt"), "wb") as f:
+            f.write(bytes.fromhex("0000 FFFF 0000 FFFF"))
+        
+        vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"b","EB1- test.txt")
+        
+        self.assertTrue(vcf.isModified())          
+
+class TestCase_SafetyMechanism(unittest.TestCase):
+    """
+    This class tests the embedded safety mechanism of the repository.
+    """
+    
+    def setUp(self):
+        self.tempDir = tempfile.TemporaryDirectory()
+        self.datat = "some text\nextra text\n"
+        self.datat2 = "new text."
+        
+    def tearDown(self):
+        self.tempDir.cleanup()
+        
+    def test_commitCreatesBackupFiles(self):
+        """
+        Are the BAK%d files created during commit, and do they contain the backup data?
+        """
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat)
+        
+        os.mkdir(os.path.join(self.tempDir.name, "pouet"))
+
+        with open(os.path.join(self.tempDir.name, os.path.join("pouet","test.txt")), "w") as f:
+            f.write(self.datat)
+            
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("First commit")
+        
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"), "r") as f:
+            meta = f.read()
+        with open(os.path.join(vc.getRepoDir(), "commits.txt"), "r") as f:
+            comm = f.read()
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat2)    
+
+        with open(os.path.join(self.tempDir.name, os.path.join("pouet","test.txt")), "w") as f:
+            f.write(self.datat2)            
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("Second commit")
+        
+        for root, dirs, files in os.walk(self.tempDir.name):
+            for f in files:
+                print(os.path.join(root, f))
+        
+        self.assertTrue(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt")))
+        self.assertTrue(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- commits.txt")))
+        self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt")))
+
+        with open(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt"), "r") as f:
+            self.assertEqual(f.read(), self.datat)
+        with open(os.path.join(vc.getDataDir(), os.path.join("pouet","BAK2- ET1- test.txt")), "r") as f:
+            self.assertEqual(f.read(), self.datat) 
+        with open(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt"), "r") as f:
+            self.assertEqual(f.read(), meta)
+        with open(os.path.join(vc.getRepoDir(), "BAK2- commits.txt"), "r") as f:
+            self.assertEqual(f.read(), comm)
 
 if __name__ == '__main__':
     unittest.main()

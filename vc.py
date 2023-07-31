@@ -121,7 +121,39 @@ d) restore the files from the tree:
         * if revN is Deleted (D<N> exists) --> delete cur.
         * cur := N
         * if cur <= X ; stop the loop.
-        
+
+
+Stages of a recovery (B1)
+-------------------------
+
+If the program crashed while doing a commit, the file database will be left in an inconsistent state.
+
+Detection:
+
+a "lock%d" file in REPO is created at the beginning of the commit operation, and deleted at the end, with %d replaced by commit number.
+
+if "lock%d" is present, this means the program crashed during processing of the commit.
+
+If so:
+- copy (not move!) all the files starting with BAK%d- to their normal equivalents (with %d the failed revision number).
+- delete any E/D files with %d as revision number
+- remove lock
+- if the program crashes while restoring, the files starting with BAK can be restored again.
+
+
+Stages of safety mechanism (B1)
+-------------------------------
+
+Before commit:
+- create "lock%d" file in REPO
+
+During commit:
+- every time a file is edited, first make a copy to BAK%d-<filename>.
+
+After commit:
+1. delete lock%d
+2. delete any BAK%d- files where %d < last revision (to keep repo clean) (in that order)
+
         
 v0
 Let's first implement the directories organization.
@@ -132,17 +164,20 @@ basic CLI.
 need for a pretty commit list printer.
 
 A2
-commit/rollback safety mechanism
-prints > log system.
-BUG : filecmp.cmp says identical python files are different (try without shallow, make a real function?) --> test case necessary
-BUG : difflib.sequencematcher extremely slow (workaround idea: compare using lists of line (comparison on line basis instead of character basis, faster according to stack overflow)
+SOLVED:
+- BUG : difflib.sequencematcher extremely slow --> activate autojunk.
+- BUG : filecmp.cmp says identical python files are different (try without shallow, make a real function?) --> put shallow to false, made test cases
+
 
 B1
+commit/rollback safety mechanism
+prints > log system
 code refactoring
 more tests
 
 03.07: almost finished
-14.07: Alpha 1 reached - todo: safety commit mechanism for Alpha 2.
+14.07: Alpha 1 reached
+20.07: Alpha 2 reached, moved safety mechanism milestone for B1.
 
 
 """
@@ -429,7 +464,7 @@ class VerConFile():
         This function takes two files (loaded as strings) and returns the delta to go from the first to the second.
         """
         
-        differ = difflib.SequenceMatcher(isjunk=None, a=fromX, b=toY, autojunk=False)
+        differ = difflib.SequenceMatcher(isjunk=None, a=fromX, b=toY, autojunk=True)
         res = differ.get_opcodes()
         
         outcodes = []
@@ -588,6 +623,8 @@ class VerConFile():
         
         There should be no revisions equal to or after revision.
         """
+        
+        self.createBackup(revision)
         if self.hasE >= revision:
             raise VerConError("You are trying to do a commit at the same revision %d, or earlier as an existing commit %d. Please don't do that."%(revision, self.hasE))
             
@@ -699,6 +736,8 @@ class VerConFile():
         
         Check if double delete.
         """
+        self.createBackup(revision)
+        
         if revision <= self.lastrevision:
             raise VerConError("You are trying to do a delete at a version (%d) <= the latest version (%d). This is bad."%(revision, self.lastrevision))
             
@@ -749,6 +788,18 @@ class VerConFile():
         Returns true if there is only one event.
         """
         return len(self.events.keys()) == 1
+        
+    def isModified(self):
+        """
+        Returns true if the file in user space is different than the file in the repository.
+        """        
+        return not filecmp.cmp(os.path.join(self.rootp, os.path.join(self.frelp, self.name)), self.getLastEventFileNameAndPath(), shallow=False)
+        
+    def createBackup(self, revision):
+        """
+        Creates the backup of the file at given revision (for the safety mechanism)
+        """
+        shutil.copy2(self.getLastEventFileNameAndPath(), os.path.join(self.datap, os.path.join(self.frelp, "BAK%d- %s"%(revision, self.events[self.lastrevision].fname))))
     
 
 class VerConDirectory():
@@ -1182,7 +1233,7 @@ class VerConDirectory():
         # Stage 2a. ... in the files to be restored or deleted?
         for f in filerestore + filedelete:
             try:
-                if not filecmp.cmp(os.path.join(rootdir, f.frelp, f.name), f.getLastEventFileNameAndPath()) and revision != self.getMaxRevision():
+                if f.isModified() and revision != self.getMaxRevision():
                     raise VerConError("%s is modified after last commit ; aborting. Please revert to last commit and retry, or commit your changes and retry."%(os.path.join(f.frelp, f.name)))
             except FileNotFoundError:
                 # if the file is not found, then we just restore it.
@@ -1246,7 +1297,7 @@ class VerConDirectory():
                         f = self.findContentFile(path, item.name)                    
                     except VerConError:
                         raise VerConError("%s is a file not committed to the tree. Please delete this file or commit it. Aborting."%os.path.join(path, item.name))
-                    if not filecmp.cmp(os.path.join(rootdir, f.frelp, f.name), f.getLastEventFileNameAndPath()) and revision != self.getMaxRevision():
+                    if f.isModified() and revision != self.getMaxRevision():
                         raise VerConError("%s has been modified since last commit, please revert or commit changes."%os.path.join(path, item.name))
         except FileNotFoundError:
             print("It seems that %s is not present in user space, skipping."%os.path.join(rootdir, path))
@@ -1414,6 +1465,7 @@ class VerConRepository():
 
         # Stage 3 : if something changed, save directory database.
         if newcommit > self.lastcommit:
+            self.backupMetadata(newcommit)
             self.lastcommit = newcommit
                         
             with open(os.path.join(self.repodir, "metadatadir.txt"),"w") as f:
@@ -1427,8 +1479,13 @@ class VerConRepository():
                 f.write("\n".join(lines))
                 f.write("\n\n")
                 
-                               
-            
+    def backupMetadata(self, commitnumber):
+        """
+        This function saves metadatadir.txt and commits.txt into a backup of current commit.
+        We suppose a clean directory.
+        """
+        shutil.copy2(os.path.join(self.repodir, "metadatadir.txt"),os.path.join(self.repodir, "BAK%d- metadatadir.txt"%commitnumber))
+        shutil.copy2(os.path.join(self.repodir, "commits.txt"),os.path.join(self.repodir, "BAK%d- commits.txt"%commitnumber))            
         
     def commitDirectories(self, commitnumber, baseDir, relPath):
         """
@@ -1479,7 +1536,7 @@ class VerConRepository():
                 # file is already in database, let's see if it was modified...
                 if fobj != None:
                     #print("Found file %s (working in %s)"%(fobj, relPath))
-                    if not filecmp.cmp(os.path.join(self.getBaseDir(), relPath, item.name), fobj.getLastEventFileNameAndPath()):
+                    if fobj.isModified():
                         #print("- %s has changed."%fobj)
                         fobj.changeAtRevision(newcommit)
                         #print("- %s is now this"%fobj)
