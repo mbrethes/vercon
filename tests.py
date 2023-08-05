@@ -10,7 +10,7 @@ Released under GPL v3.
 (c) 2023 by Mathieu Brèthes
 """
 
-import unittest, os, tempfile, difflib,shutil, time
+import unittest, os, tempfile, difflib,shutil, time, logging, inspect
 from vc import VerConRepository, VerConDirectory, VerConError, VerConFile
 
 class TestConstructor(unittest.TestCase):
@@ -33,6 +33,7 @@ class TestConstructor(unittest.TestCase):
           * an empty metadatadir.txt file
           * an empty commits.txt file
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         setupDir = self.tempDir.name
         repodir = os.path.join(self.tempDir.name, "REPO")
         rep = VerConRepository(setupDir)
@@ -48,6 +49,7 @@ class TestConstructor(unittest.TestCase):
         - there is an existing repository in a the folder, containing non-empty data files.
         - the data files should not be erased or reset.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         repodir = os.path.join(self.tempDir.name, "REPO")
         datadir = os.path.join(repodir, "DATA")
         garbage = "1 Random garbage"
@@ -71,7 +73,7 @@ class TestConstructor(unittest.TestCase):
         - there should be no REPO created in the test folder itself
         - the REPO of parent folder should be left alone without touching
         """
-        
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         childdir = os.path.join(self.tempDir.name, "child")
         repodir = os.path.join(self.tempDir.name, "REPO")
         datadir = os.path.join(repodir, "DATA")
@@ -101,7 +103,7 @@ class TestConstructor(unittest.TestCase):
           on which it is invoked, not the one at the bottom:
           .../ A (REPO) / B (REPO) / C (invokation) --> uses B (REPO)
         """
-        
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         childdir = os.path.join(self.tempDir.name, "child")
         childdir2 = os.path.join(childdir, "grandchild")
         repodir = os.path.join(self.tempDir.name, "REPO")
@@ -141,7 +143,7 @@ class TestLogging(unittest.TestCase):
 
     def test_showLog(self):
         """ checks whether the log function displays the log file. """
-        
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         repodir = os.path.join(self.tempDir.name, "REPO")
         datadir = os.path.join(repodir, "DATA")
         os.mkdir(repodir)
@@ -161,6 +163,7 @@ class TestLogging(unittest.TestCase):
         """
         Checks whether the program generates a log file with proper data information.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name, "test"))
         with open(os.path.join(self.tempDir.name, "test", "foo.txt"), "w") as f:
             f.write("foo")
@@ -205,7 +208,7 @@ class TestVerConDirectory(unittest.TestCase):
         """
         A test to see if proper metadata works, and improper metadata fails.
         """
-        
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         propermetadata = ["1,2,3 test"]
         improper=["1,2,3, test"]
         
@@ -219,6 +222,7 @@ class TestVerConDirectory(unittest.TestCase):
         """
         A test to see what happens if we request a directory that does not exist in the database."
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         propermetadata = ["1,2,3 test"]
         
         good = VerConDirectory(propermetadata)
@@ -234,7 +238,7 @@ class TestVerConDirectory(unittest.TestCase):
         
         First test case also allows to check if manual creation works
         """
-
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         rev2 = VerConDirectory(["2 test"])
         self.assertTrue(rev2.atPath("test").isCurrentlyActive())
         self.assertFalse(rev2.atPath("test").isActiveAt(1))
@@ -270,6 +274,7 @@ class TestVerConDirectory(unittest.TestCase):
         This test sees if directories are correctly created when a hierarchy is sent
         as a parameter.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         # first a test with a child
         dirs = VerConDirectory(["1 test", " 1 subtest"])
@@ -294,6 +299,7 @@ class TestVerConDirectory(unittest.TestCase):
         """
         This tests if it is possible to add a child to an existing directory.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         dirs = VerConDirectory()
         
@@ -322,6 +328,7 @@ class TestVerConDirectory(unittest.TestCase):
         This tests if a directory added to a deleted directory, will reopen the directory
         with the correct revision number.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         dirs = VerConDirectory(["1,2 test"])       
         dirs.Add(os.path.join("test","test2"),3)
         self.assertTrue(dirs.atPath("test").isCurrentlyActive())
@@ -333,6 +340,7 @@ class TestVerConDirectory(unittest.TestCase):
         This tests if the directory class can output the file in the same state as it was input,
         and etc.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         data = ["1 test"," 1 subtest","1 zorgl", " 1,2 bleh", " 1 car"]
         updd = ["1 test"," 1 subtest","1 zorgl", " 1,2,3 bleh", "  3 bar", "  3 foo"," 1 car"]
@@ -361,6 +369,7 @@ class TestCommitDirectories(unittest.TestCase):
         commit it, and check whether the directory appears as committed in
         the metadata file, and if it appears in the REPO structure.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         dirname = "test"
                 
@@ -375,6 +384,7 @@ class TestCommitDirectories(unittest.TestCase):
             
     def test_commitSubdirectory(self):
         """ But can it handle... A subdirectory?? """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         dirname = os.path.join("test","test2")
         vc = VerConRepository(self.tempDir.name)
@@ -390,6 +400,7 @@ class TestCommitDirectories(unittest.TestCase):
             
     def test_commitAndDelete(self):
         """ Is the directory still present when deleted, but indicated as such in the metadata? """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         dirname = "test"
                 
         vc = VerConRepository(self.tempDir.name)
@@ -408,6 +419,7 @@ class TestCommitDirectories(unittest.TestCase):
         
     def test_commitDeleteRecreate(self):
         """ So is the directory live again? After this, I think we are good. """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         dirname = "test"
                 
         vc = VerConRepository(self.tempDir.name)
@@ -441,6 +453,7 @@ class TestRevision(unittest.TestCase):
         """
         If this is a new repository, then revision number is 0.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         vc = VerConRepository(self.tempDir.name)
         self.assertEqual(vc.getLastCommit(), 0)
         
@@ -448,6 +461,7 @@ class TestRevision(unittest.TestCase):
         """
         Tests if the repository correctly reports that the latest commit equals the highest number in the file.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name,"REPO"))    
         os.mkdir(os.path.join(self.tempDir.name,"REPO","DATA"))
         with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"), "w") as f:
@@ -466,6 +480,7 @@ class TestRevision(unittest.TestCase):
         """
         Tests if the repository correctly gets incremented when a directory is added to the repository.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         vc = VerConRepository(self.tempDir.name)
         
@@ -494,7 +509,7 @@ class TestCommitFiles(unittest.TestCase):
     def setUp(self):
         self.tempDir = tempfile.TemporaryDirectory()
         self.datat = "some text\nextra text\n"
-        self.datab = bytes.fromhex('d3ad b33f 0100 0011')
+        self.datab = bytes.fromhex('d3ad b33f 0100 0011 FFFF 0000')
         
     def tearDown(self):
         self.tempDir.cleanup()
@@ -508,6 +523,7 @@ class TestCommitFiles(unittest.TestCase):
         set nocheck to True to skip the checks (useful if you call this test from another test as a setup)
         
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         vc = VerConRepository(self.tempDir.name)
         
@@ -533,11 +549,49 @@ class TestCommitFiles(unittest.TestCase):
                 
             with open(os.path.join(vc.getDataDir(), "EB1- binfile.bin"), "rb") as f:
                 self.assertEqual(f.read(), datab)
+
+    def test_commitMixed(self):
+        """
+        When we first commit a text file, then a binary file, do we get the correct files created in the repository?
+        And conversely when creating a bin file and then commiting it as text.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        datat = self.datat
+        datab = self.datab        
+
+        with open(os.path.join(self.tempDir.name, "file.one"), "w") as f:
+            f.write(datat)
+            
+        with open(os.path.join(self.tempDir.name, "file.two"), "wb") as f:
+            f.write(datab)        
+            
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("First commit.")
+        
+        with open(os.path.join(self.tempDir.name, "file.one"), "wb") as f:
+            f.write(datab)
+            
+        with open(os.path.join(self.tempDir.name, "file.two"), "w") as f:
+            f.write(datat)       
+
+        vc = VerConRepository(self.tempDir.name)
+        vc.commit("Second commit.")       
+
+        self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "HT1- file.one")), "HT1- file.one not created in REPO/DATA")
+        self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "HB1- file.two")), "HB1- file.two not created in REPO/DATA")   
+
+        with open(os.path.join(vc.getDataDir(), "HT1- file.one"), "r") as f:
+            self.assertEqual(f.read(), datat)
+            
+        with open(os.path.join(vc.getDataDir(), "HB1- file.two"), "rb") as f:
+            self.assertEqual(f.read(), datab)
+    
             
     def test_commitAndDelete(self):
         """
         We will now delete both files, are the deleted files stored in database?
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         self.test_commitNewFiles(True)
         
         datat = self.datat
@@ -575,6 +629,7 @@ class TestCommitFiles(unittest.TestCase):
         """
         What if we create the files again?
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         self.test_commitAndDelete()
         
         vc = VerConRepository(self.tempDir.name)
@@ -590,7 +645,8 @@ class TestCommitFiles(unittest.TestCase):
             
         vc.commit("no reason")
         
-
+        self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "D2- textfile.txt")), "D2- textfile.txt has been removed from REPO/DATA")
+        self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "D2- binfile.bin")), "D2- binfile.bin has been removed from REPO/DATA")     
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "ET3- textfile.txt")), "ET3- textfile.txt not created in REPO/DATA")
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "EB3- binfile.bin")), "EB3- binfile.bin not created in REPO/DATA")       
 
@@ -610,6 +666,7 @@ class TestCommitFiles(unittest.TestCase):
         
         Files are stored in the local testdata/utf8file.txt / nonutffile.txt / binfile.bin
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         shutil.copyfile(os.path.join("testdata","testutf8.txt"), os.path.join(self.tempDir.name, "testutf8.txt"))
         shutil.copyfile(os.path.join("testdata","nonutffile.txt"), os.path.join(self.tempDir.name, "nonutffile.txt"))
@@ -631,6 +688,7 @@ class TestCommitFiles(unittest.TestCase):
         """
         This function ensures that the file database is properly populated (at least when there is proper file data in REPO/DATA).
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datadir = os.path.join(self.tempDir.name,"REPO","DATA")
         os.mkdir(os.path.join(self.tempDir.name,"REPO"))
         os.mkdir(os.path.join(datadir))
@@ -755,6 +813,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         Tests if when we restore to the last revision, files modified are overwritten.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
             f.write(self.datat)
             
@@ -790,6 +849,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         
         when restored, dir2/A should not be restored.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name, "dir1"))
         os.mkdir(os.path.join(self.tempDir.name, "dir2"))
 
@@ -833,6 +893,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         -         filter is not a valid RE.
         - revert to higher revision than final and < 1
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
        
         
         with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
@@ -856,6 +917,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         ensure filter works.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name, "dir"))
         
         with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
@@ -909,6 +971,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         ensure restore does not happen if files were modified and not yet committed, AND
         ensure the files are not restored anyway.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
             f.write(self.datat)
             
@@ -935,6 +998,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         We commit a text file and a binary file twice, and see if we can restore the version of first commit.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         datat = self.datat
         
@@ -963,9 +1027,10 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         We do a similar test as for text, but for a binary file.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datab = self.datab
         
-        newdatab = bytes.fromhex('0101 1010 0101 0101')        
+        newdatab = bytes.fromhex('0101 1010 0101 0101 FFFF 0000')        
 
 
             
@@ -993,6 +1058,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         Let's see if the directory structure is restored after a delete.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         os.mkdir(os.path.join(self.tempDir.name, "test"))
         vc = VerConRepository(self.tempDir.name)            
@@ -1018,6 +1084,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         Let's see if we revert before the first creation of a directory works
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         os.mkdir(os.path.join(self.tempDir.name, "test"))
         vc = VerConRepository(self.tempDir.name)            
@@ -1035,6 +1102,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         Do files disappear if they are in status deleted?
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
         with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
             f.write(datat)        
@@ -1055,6 +1123,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         Do binary files disappear when they are in status deleted?
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datab = self.datab
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "wb") as f:
             f.write(datab)        
@@ -1073,6 +1142,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         
     def test_fileRecreatedText(self):
         """ if we revert to a state where the file was deleted, it should not be present. """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
         self.test_fileDeletedText()
         with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
@@ -1096,6 +1166,7 @@ class TestRetrievePreviousData(unittest.TestCase):
 
     def test_fileRecreatedBinary(self):
         """ if we revert to a state where the bin file was deleted, it should not be present. """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datab = self.datab
         self.test_fileDeletedBinary()
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "wb") as f:
@@ -1124,9 +1195,10 @@ class TestRetrievePreviousData(unittest.TestCase):
         from a revision to another one
         properly works too.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
         datab = self.datab
-        newdatab = bytes.fromhex("0001 1010 0101 0101")
+        newdatab = bytes.fromhex("0001 1010 0101 0101 FFFF 0000")
         newdatat = "This is \n a test among tests."
         
         with open(os.path.join(self.tempDir.name, "dualfile"), "w") as f:
@@ -1227,6 +1299,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         --> should restore active file if file was active before revision X
         --> should not create a file if file was deleted or never checked
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
         with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
             f.write(datat)                
@@ -1256,6 +1329,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         --> should restore active file if file was active before revision X
         --> should not create a file if file was deleted or never checked
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datab = self.datab
         datat = self.datat
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "wb") as f:
@@ -1286,6 +1360,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         --> should restore active file if file was active before revision X
         --> should not create a file if file was deleted or never checked
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)        
         datat = self.datat
         with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
             f.write(datat)                
@@ -1318,6 +1393,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         --> should restore active file if file was active before revision X
         --> should not create a file if file was deleted or never checked
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datab = self.datab
         datat = self.datat
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "wb") as f:
@@ -1349,6 +1425,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         
         here test is created at revision 1 and deleted at revision 3, we restore to revision 2: it should be there.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
 
         os.mkdir(os.path.join(self.tempDir.name, "test"))
@@ -1378,6 +1455,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         here, test is created in revision 1, deleted in 2, and recreated in 4
         we ask a revert to revision 3: test should not exist
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         os.mkdir(os.path.join(self.tempDir.name, "test"))
         vc = VerConRepository(self.tempDir.name)
@@ -1407,6 +1485,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         
         If yes, the process will work for an indefinite amount of revisions.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         datat = self.datat
         newd1 = "some text\nThis is new text"
@@ -1449,8 +1528,8 @@ class testVerConFile(unittest.TestCase):
 
         os.mkdir(self.dataDir)
         
-        self.t1 = "this is text data"
-        self.t2 = "this is modified text data"
+        self.t1 = "this is text data\n"
+        self.t2 = "this is modified text data\n"
         self.t3 = "even more modified text"
         self.b1 = bytes.fromhex("0000 FFFF 1010 1111")
         self.b2 = bytes.fromhex("1111 1010 FFFF 0000")
@@ -1471,6 +1550,7 @@ class testVerConFile(unittest.TestCase):
         
         loadEvent must raise an error if someone tries to load twice a "e" event.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         f = VerConFile("foo", ".", ".", "")
       
@@ -1508,6 +1588,7 @@ class testVerConFile(unittest.TestCase):
         Note that the commits are dependent on loadEvent to be called by the higher level commit routine to populate
         VerConFile's event list.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         f = VerConFile("foo", ".", ".", "")
         self.assertTrue(f.isNew())
         
@@ -1523,6 +1604,7 @@ class testVerConFile(unittest.TestCase):
         
         Checks function returns false, otherwise.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         f = VerConFile("foo", ".", ".", "")
         self.assertFalse(f.existsAt(1))
         f.loadEvent("e",2,"t","foo")
@@ -1545,6 +1627,7 @@ class testVerConFile(unittest.TestCase):
         
         this considers the file is already created, return of this function is undefined if file is deleted or never exists.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         f = VerConFile("foo", ".", ".", "")
         f.loadEvent("h",2,"t","foo")
         f.loadEvent("e",4,"b","foo")
@@ -1559,6 +1642,7 @@ class testVerConFile(unittest.TestCase):
         Check that file can be properly restored from the latest revision in the repository,
         and incidentally, on first revision.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
             f.write(self.t1)
@@ -1587,6 +1671,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB, BB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
             f.write(self.t1)
@@ -1608,6 +1693,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB, BB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         with open(os.path.join(self.rootDir, "test.bin"), "wb") as f:
             f.write(self.b1)
@@ -1630,6 +1716,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
             f.write(self.t1)
@@ -1651,6 +1738,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.tst"), "wb") as f:
             f.write(self.b1)
@@ -1673,6 +1761,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
             f.write(self.t1)
@@ -1694,6 +1783,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
             f.write(self.t1)
@@ -1726,6 +1816,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.tst"), "wb") as f:
             f.write(self.b1)
             
@@ -1745,6 +1836,7 @@ class testVerConFile(unittest.TestCase):
         
         Other scenarios to be tested : TB, BT, TD, DT, BD, DB
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.tst"), "wb") as f:
             f.write(self.b1)
             
@@ -1773,6 +1865,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures an exception is raised if there is already anything in the history (created or modified event).
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.tst"), "wb") as f:
             f.write(self.b1)
             
@@ -1789,6 +1882,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures binary files are detected as binary, and text files as unicode.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.bin"), "wb") as f:
             f.write(self.b1)        
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
@@ -1800,7 +1894,7 @@ class testVerConFile(unittest.TestCase):
         self.assertEqual(data, self.b1)
         type,data = vcf.textOrBinary(os.path.join(self.rootDir, "test.txt"))
         self.assertEqual(type, "t")
-        self.assertEqual(data, self.t1)        
+        self.assertEqual(data, [self.t1])        
             
     def test_createAtRevisionSubdir(self):
         """
@@ -1808,6 +1902,7 @@ class testVerConFile(unittest.TestCase):
         
         Also tests if creation correctly done in a subdirectory.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
         os.mkdir(os.path.join(self.rootDir, self.subdir))
         os.mkdir(os.path.join(self.dataDir, self.subdir))
@@ -1841,6 +1936,7 @@ class testVerConFile(unittest.TestCase):
         Ensures an exception is raised if no "create" event was recorded, or if the change event is
         created before the revision of the creation.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.tst"), "wb") as f:
             f.write(self.b1)
             
@@ -1859,6 +1955,7 @@ class testVerConFile(unittest.TestCase):
         Ensures an exception is raised if no "create" event was recorded, or if the change event is
         created before the revision of the creation.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.tst"), "wb") as f:
             f.write(self.b1)
             
@@ -1878,10 +1975,17 @@ class testVerConFile(unittest.TestCase):
         
         Tests different uses cases for the expression language designed to store the deltas:
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
+        #datalist = [
+        #    {"file1": "baz", "file2": "foo", "file3": "bar", "delta2-1": "s 3\ni 3\nbaz" , "delta3-2": "s 3\ni 3\nfoo"},
+        #    {"file1": "baz", "file2": "sad", "file3": "bar", "delta2-1": "s 1\ni 1\nb\nc 1\ni 1\nz" , "delta3-2": "s 1\ni 1\ns\nc 1\ni 1\nd"},
+        #    ]
+            
         datalist = [
-            {"file1": "baz", "file2": "foo", "file3": "bar", "delta2-1": "s 3\ni 3\nbaz" , "delta3-2": "s 3\ni 3\nfoo"},
-            {"file1": "baz", "file2": "sad", "file3": "bar", "delta2-1": "s 1\ni 1\nb\nc 1\ni 1\nz" , "delta3-2": "s 1\ni 1\ns\nc 1\ni 1\nd"},
+            {"file1": "baz\nfoo", "file2": "baz\nfoo\nbar", "file3": "foo\nbin\nbar", "delta2-1": "c 1\ni 1\nfoo" , "delta3-2": "i 1\nbaz\nc 1\ns 1\nc 1"},
+            {"file1": "baz\nbad\nfrob", "file2": "sad\ndad\nbland", "file3": "bonk\nbland", "delta2-1": "i 3\nbaz\nbad\nfrob" , "delta3-2": "s 1\ni 2\nsad\ndad\nc 1"},
+            {"file1": "e", "file2": "\n\ne\n\n\n", "file3":"e\n\n", "delta3-2":"i 2\n\n\nc 2\ni 1\n\n", "delta2-1":"i 1\ne"}
             ]
 
         for t in datalist:
@@ -1905,16 +2009,29 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures that delta is correctly generated.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         vcf = VerConFile("test","","","")
-        self.assertEqual(vcf.calculateDelta("foo","bar"),"s 3\ni 3\nbar")
-        self.assertEqual(vcf.calculateDelta("foo","boo"),"s 1\ni 1\nb\nc 2")
-        self.assertEqual(vcf.calculateDelta("","boo"),"i 3\nboo")
-        self.assertEqual(vcf.calculateDelta("foo",""),"s 3")
+        #self.assertEqual(vcf.calculateDelta("foo","bar"),"s 1\ni 3\nbar")
+        #self.assertEqual(vcf.calculateDelta("foo","boo"),"s 1\ni 1\nb\nc 2")
+        #self.assertEqual(vcf.calculateDelta("","boo"),"i 3\nboo")
+        #self.assertEqual(vcf.calculateDelta("foo",""),"s 3")
+
+        # warning: the order of arguments is from , to (not to, from !)
+        self.assertEqual(vcf.calculateDelta(["foo"],["bar"]),"s 1\ni 1\nbar\n")
+        self.assertEqual(vcf.calculateDelta(["foo\n","bar\n","baz"],["boo\n","bar\n","baz"]),"s 1\ni 1\nboo\nc 2\n")
+        self.assertEqual(vcf.calculateDelta([],["boo"]),"i 1\nboo\n")
+        self.assertEqual(vcf.calculateDelta(["foo"],[]),"s 1\n")
+        # test from a problem with another test case
+        self.assertEqual(vcf.calculateDelta(["e"],["some text\n","extra text\n","\n"]), "s 1\ni 3\nsome text\nextra text\n\n")
+        
+        # what if we have many empty lines?
+        self.assertEqual(vcf.calculateDelta(["e"],["\n","\n","e\n","\n","\n"]), "s 1\ni 5\n\n\ne\n\n\n")
 
     def test_isModified_FalseWhenNoModifications_DateSimilar_Text(self):
         """
         Ensures file comparison works in case the two files are identical and have same metadata
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
             f.write("Similar")
         
@@ -1930,6 +2047,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures files comparison checks content of file if date differ and report it was not modified.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
             f.write("Similar")
@@ -1948,6 +2066,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures file comparison works in case the two files are different, but have same metadata
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
             f.write("Similar")
         
@@ -1967,6 +2086,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures file comparison works in case the two files are different and do not have same metadata
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
             f.write("Similar")
             
@@ -1984,6 +2104,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures file comparison works in case the two files are identical and have same metadata
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
             f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
         
@@ -1999,6 +2120,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures files comparison checks content of file if date differ and report it was not modified.
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
         with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
             f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
@@ -2011,12 +2133,67 @@ class testVerConFile(unittest.TestCase):
         vcf.loadEvent("e",1,"b","EB1- test.txt")
         
         self.assertFalse(vcf.isModified())       
+        
+    def test_isModified_FalseForRealWorldNormalFiles(self):
+        """
+        Ensures file comparison check returns true for two copies of the same file.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+            
+        shutil.copy(os.path.join("testdata", "data.rpy"), os.path.join(self.rootDir, "data.rpy"))
+        
+        with open(os.path.join(self.rootDir, "data.rpy"), "r") as f:
+            data = f.read()
+        
+        time.sleep(2)
+        
+        with open(os.path.join(self.dataDir, "ET1- data.rpy"), "w") as f:
+            f.write(data)
+        
+        vcf = VerConFile("data.rpy", self.rootDir, self.dataDir, "")   
+        vcf.loadEvent("e",1,"t","ET1- data.rpy")
+        
+        self.assertFalse(vcf.isModified())      
 
+    def test_isModified_FalseRealWorldSituation_Accents(self):
+        """
+        Ensure file comparison returns false when files are committed with accents.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        
+        shutil.copy(os.path.join("testdata", "data.rpy"), os.path.join(self.rootDir, "data.rpy"))
 
+        vc = VerConRepository(self.rootDir)
+        vc.commit("un accent")
+        
+        vcf = VerConFile("data.rpy", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
+        vcf.loadEvent("e",1,"t","ET1- data.rpy")        
+
+        self.assertFalse(vcf.isModified())   
+        
+        vc = VerConRepository(self.rootDir)
+        vc.commit("un second accent")
+        
+        for root, dirs, files in os.walk(self.rootDir):
+            for f in files:
+                print(os.path.join(root, f))
+        
+        try:
+            vcf = VerConFile("data.rpy", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
+            vcf.loadEvent("e",2,"t","ET2- data.rpy")        
+
+            self.assertFalse(vcf.isModified())   
+        except FileNotFoundError:
+            vcf = VerConFile("data.rpy", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
+            vcf.loadEvent("e",1,"t","ET1- data.rpy")        
+
+            self.assertFalse(vcf.isModified())           
+        
     def test_isModified_TrueWhenModifications_DateSimilar_Binary(self):
         """
         Ensures file comparison works in case the two files are different, but have same metadata
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
             f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
         
@@ -2036,6 +2213,7 @@ class testVerConFile(unittest.TestCase):
         """
         Ensures file comparison works in case the two files are different and do not have same metadata
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.txt"), "wb") as f:
             f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
             
@@ -2058,6 +2236,9 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         self.tempDir = tempfile.TemporaryDirectory()
         self.datat = "some text\nextra text\n"
         self.datat2 = "new text."
+        self.datab = bytes.fromhex("0000 FFFF DEAD BEEF")
+        self.datab2 = bytes.fromhex("FFFF 0000 BEEF DEAD")
+        self.repoDir = os.path.join(self.tempDir.name, "REPO") 
         
     def tearDown(self):
         self.tempDir.cleanup()
@@ -2066,6 +2247,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         """
         Are the BAK%d files created during commit, and do they contain the backup data?
         """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
             f.write(self.datat)
         
@@ -2092,10 +2274,6 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.commit("Second commit")
         
-        for root, dirs, files in os.walk(self.tempDir.name):
-            for f in files:
-                print(os.path.join(root, f))
-        
         self.assertTrue(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt")))
         self.assertTrue(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- commits.txt")))
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt")))
@@ -2108,6 +2286,199 @@ class TestCase_SafetyMechanism(unittest.TestCase):
             self.assertEqual(f.read(), meta)
         with open(os.path.join(vc.getRepoDir(), "BAK2- commits.txt"), "r") as f:
             self.assertEqual(f.read(), comm)
+            
+    def test_loadAfterCommitFail(self):
+        """
+        In this test, we simulate a commit failure ("LOCK" is present in root), and we observe if
+        the repository is self-cleaned:
+        - are backup files restored and committed files deleted
+        - is LOCK removed
+        - works in subdirectories
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        
+        subdir=os.path.join(self.tempDir.name, "testdir")
+        datasubdir=os.path.join(self.tempDir.name,"REPO","DATA","testdir")
+        os.mkdir(subdir)
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        with open(os.path.join(subdir, "test.bin"), "wb") as f:
+            f.write(self.datab)
+            
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("First commit")       
+
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat2)        
+            
+        with open(os.path.join(subdir, "test.bin"), "wb") as f:
+            f.write(self.datab2)
+            
+        # save data before backup
+        with open(os.path.join(self.repoDir, "commits.txt"), "r") as f:
+            datacommit = f.read()
+            
+        with open(os.path.join(self.repoDir, "metadatadir.txt"), "r") as f:
+            datadirs = f.read()
+        
+        # To ensure metadatadir.txt changes between first and second commit.
+        os.mkdir(os.path.join(self.tempDir.name, "pouet"))        
+            
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("Second commit")   
+        
+        # Lock contains the last revision number.
+        with open(os.path.join(self.repoDir, "LOCK"), "w") as f:
+            f.write("2")
+            f.close()
+
+        vc = VerConRepository(self.tempDir.name)
+        
+        self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "LOCK")), "The LOCK file has not been removed by the instantiation of the class.")
+        self.assertEqual(vc.getLastCommit(), 1, "Last commit is %d, should be 1"%vc.getLastCommit())
+        
+        self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt")))
+        self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- commits.txt")))
+
+        with open(os.path.join(self.repoDir, "commits.txt"), "r") as f:
+            self.assertEqual(datacommit, f.read())
+            
+        with open(os.path.join(self.repoDir, "metadatadir.txt"), "r") as f:
+            self.assertEqual(datadirs, f.read())
+        
+        self.assertFalse(os.path.isfile(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt")))
+        self.assertFalse(os.path.isfile(os.path.join(vc.getDataDir(), "HT1- test.txt")))
+        with open(os.path.join(vc.getDataDir(),"ET1- test.txt"), "r") as f:
+            self.assertEqual(f.read(), self.datat, "Restored file data is not equal to the backup!")
+
+        self.assertFalse(os.path.isfile(os.path.join(datasubdir, "BAK2- EB1- test.bin")))
+        self.assertFalse(os.path.isfile(os.path.join(datasubdir, "HB1- test.bin")))
+        with open(os.path.join(datasubdir,"EB1- test.bin"), "rb") as f:
+            self.assertEqual(f.read(), self.datab, "Restored file data is not equal to the backup!")
+
+        # this should not crash
+        vc.commit("Second commit")
+
+    def test_failAtFirstCommit(self):
+        """
+        What happens if there is a failure at first commit:
+        - there should be no LOCK file.
+        - there should be no BAK files.
+        - repository should be empty.
+        - a new commit should work.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        subdir=os.path.join(self.tempDir.name, "testdir")
+        datasubdir=os.path.join(self.tempDir.name,"REPO","DATA","testdir")
+        os.mkdir(subdir)
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        with open(os.path.join(subdir, "test.bin"), "wb") as f:
+            f.write(self.datab)
+            
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("First commit")               
+        
+        # Lock contains the last revision number.
+        with open(os.path.join(self.repoDir, "LOCK"), "w") as f:
+            f.write("1")
+            f.close()        
+            
+        #for root, dirs, files in os.walk(self.repoDir):
+        #    for f in files:
+        #        print(os.path.join(root, f))
+
+        vc = VerConRepository(self.tempDir.name)
+        
+        self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "LOCK")), "The LOCK file has not been removed by the instantiation of the class.")
+        self.assertEqual(vc.getLastCommit(), 0, "Last commit is %d, should be 0"%vc.getLastCommit())
+        
+        self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK1- metadatadir.txt")))
+        self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK1- commits.txt")))
+        
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r") as f:
+            data = f.read()
+            self.assertEqual(data, "", "metadatadir.txt is not empty, contains %s"%data)
+
+        with open(os.path.join(vc.getRepoDir(), "commits.txt"),"r") as f:
+            data = f.read()
+            self.assertEqual(data, "", "commits.txt is not empty, contains %s"%data)
+
+        # this should not crash
+        vc.commit("First commit")
+        
+
+    def test_cleanup(self):
+        """
+        Tests if the cleanup function (called after a successful commit) really removes the BAK files of the previous commits.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        
+        subdir=os.path.join(self.tempDir.name, "testdir")
+        datasubdir=os.path.join(self.tempDir.name,"REPO","DATA","testdir")
+        os.mkdir(subdir)
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat)
+            
+        with open(os.path.join(subdir, "test.bin"), "wb") as f:
+            f.write(self.datab)
+            
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("First commit")       
+
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat2)        
+            
+        with open(os.path.join(subdir, "test.bin"), "wb") as f:
+            f.write(self.datab2)
+            
+        
+        # To ensure metadatadir.txt changes between first and second commit.
+        os.mkdir(os.path.join(self.tempDir.name, "pouet"))        
+            
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("Second commit")     
+        
+        
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+            f.write(self.datat)        
+            
+        with open(os.path.join(subdir, "test.bin"), "wb") as f:
+            f.write(self.datab)
+            
+        # To ensure metadatadir.txt changes between second and third commit.
+        os.mkdir(os.path.join(self.tempDir.name, "pouet2"))                   
+
+        vc = VerConRepository(self.tempDir.name)
+        
+        vc.commit("Third commit")    
+
+        #for root, dirs, files in os.walk(vc.getRepoDir()):
+        #    for f in files:
+        #        print(os.path.join(root, f))
+        
+        forbidlist = [os.path.join(vc.getRepoDir(),"BAK1- commits.txt"),
+                      os.path.join(vc.getRepoDir(),"BAK2- commits.txt"),
+                      os.path.join(vc.getRepoDir(),"BAK1- metadatadir.txt"),
+                      os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt"),
+                      os.path.join(datasubdir, "BAK2- EB1- test.bin"),
+                      os.path.join(vc.getDataDir(),"BAK2- ET1- test.txt")]
+
+        for f in forbidlist:
+            self.assertFalse(os.path.isfile(os.path.join(vc.getDataDir(), f)), "%s is still present in repository!"%f)
+        
 
 if __name__ == '__main__':
+
+    logging.basicConfig(filename='journal-%s.log'%time.strftime(r"%Y%m%d-%H%M%S"), encoding='utf-8', level=logging.DEBUG)
     unittest.main()
