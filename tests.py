@@ -55,16 +55,16 @@ class TestConstructor(unittest.TestCase):
         garbage = "1 Random garbage"
         os.mkdir(repodir)
         os.mkdir(datadir)
-        with open(os.path.join(repodir, "metadatadir.txt"),"w") as f:
+        with open(os.path.join(repodir, "metadatadir.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)
-        with open(os.path.join(repodir, "commits.txt"),"w") as f:
+        with open(os.path.join(repodir, "commits.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)
             
         rep = VerConRepository(self.tempDir.name)
         
-        with open(os.path.join(repodir, "metadatadir.txt"),"r") as f:
+        with open(os.path.join(repodir, "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), garbage)
-        with open(os.path.join(repodir, "commits.txt"),"r") as f:
+        with open(os.path.join(repodir, "commits.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), garbage)
         
     def test_repoHierarchy(self):
@@ -83,17 +83,17 @@ class TestConstructor(unittest.TestCase):
         os.mkdir(repodir)
         os.mkdir(datadir)
 
-        with open(os.path.join(repodir, "metadatadir.txt"),"w") as f:
+        with open(os.path.join(repodir, "metadatadir.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)
-        with open(os.path.join(repodir, "commits.txt"),"w") as f:
+        with open(os.path.join(repodir, "commits.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)        
 
         rep = VerConRepository(childdir)
         self.assertFalse(os.path.isdir(os.path.join(childdir,"REPO")))
         
-        with open(os.path.join(repodir, "metadatadir.txt"),"r") as f:
+        with open(os.path.join(repodir, "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), garbage)
-        with open(os.path.join(repodir, "commits.txt"),"r") as f:
+        with open(os.path.join(repodir, "commits.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), garbage)        
             
             
@@ -117,13 +117,13 @@ class TestConstructor(unittest.TestCase):
         os.mkdir(childdir2)
         os.mkdir(datadir)
 
-        with open(os.path.join(repodir, "metadatadir.txt"),"w") as f:
+        with open(os.path.join(repodir, "metadatadir.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)
-        with open(os.path.join(repodir, "commits.txt"),"w") as f:
+        with open(os.path.join(repodir, "commits.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)        
-        with open(os.path.join(repodir2, "metadatadir.txt"),"w") as f:
+        with open(os.path.join(repodir2, "metadatadir.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)
-        with open(os.path.join(repodir2, "commits.txt"),"w") as f:
+        with open(os.path.join(repodir2, "commits.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(garbage)    
 
         rep = VerConRepository(childdir2)
@@ -150,9 +150,9 @@ class TestLogging(unittest.TestCase):
         os.mkdir(datadir)
         logdata = "1. initial commit\n  +file A\n\n2. second commit\n  +file B"
         minlogd = "1. initial commit\n\n2. second commit\n"
-        with open(os.path.join(repodir, "metadatadir.txt"),"w") as f:
+        with open(os.path.join(repodir, "metadatadir.txt"),"w", encoding="utf-8", newline="") as f:
             f.write("1 bleh")
-        with open(os.path.join(repodir, "commits.txt"),"w") as f:
+        with open(os.path.join(repodir, "commits.txt"),"w", encoding="utf-8", newline="") as f:
             f.write(logdata)
         rep = VerConRepository(self.tempDir.name)
         
@@ -165,9 +165,9 @@ class TestLogging(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name, "test"))
-        with open(os.path.join(self.tempDir.name, "test", "foo.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test", "foo.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("foo")
-        with open(os.path.join(self.tempDir.name, "bar.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "bar.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("bar")   
         with open(os.path.join(self.tempDir.name, "baz.txt"), "wb") as f:
             f.write(bytes.fromhex("FFFF 0000 DEAD BEEF"))
@@ -175,10 +175,10 @@ class TestLogging(unittest.TestCase):
         rep = VerConRepository(self.tempDir.name)
         rep.commit("initial commit")
         
-        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n"%os.sep)
             
-        with open(os.path.join(self.tempDir.name, "bar.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "bar.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("bar2")   
         with open(os.path.join(self.tempDir.name, "baz.txt"), "wb") as f:
             f.write(bytes.fromhex("FFFF 0000 DEAD BEEF FFFF"))    
@@ -186,7 +186,7 @@ class TestLogging(unittest.TestCase):
         rep = VerConRepository(self.tempDir.name)
         rep.commit("commit for things")
 
-        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n2. commit for things\n  *ft bar.txt\n  *fb baz.txt\n\n"%os.sep)
             
         os.unlink(os.path.join(self.tempDir.name, "test", "foo.txt"))
@@ -195,9 +195,18 @@ class TestLogging(unittest.TestCase):
         rep = VerConRepository(self.tempDir.name)
         rep.commit("third commit")
         
-        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n2. commit for things\n  *ft bar.txt\n  *fb baz.txt\n\n3. third commit\n  -d test\n  -f test%sfoo.txt\n\n"%(os.sep, os.sep))
-         
+
+        os.mkdir(os.path.join(self.tempDir.name, "subdir"))
+        os.mkdir(os.path.join(self.tempDir.name, "subdir", "subdir2"))
+
+        rep = VerConRepository(self.tempDir.name)
+        rep.commit("fourth commit")
+        
+        with open(os.path.join(self.tempDir.name, "REPO", "commits.txt"), "r", encoding="utf-8", newline="") as f:
+            self.assertEqual(f.read(), "1. initial commit\n  +ft bar.txt\n  +fb baz.txt\n  +d test\n  +ft test%sfoo.txt\n\n2. commit for things\n  *ft bar.txt\n  *fb baz.txt\n\n3. third commit\n  -d test\n  -f test%sfoo.txt\n\n4. fourth commit\n  +d subdir\n  +d subdir%ssubdir2\n\n"%(os.sep, os.sep, os.sep))
+        
          
 class TestVerConDirectory(unittest.TestCase):
     """
@@ -230,7 +239,18 @@ class TestVerConDirectory(unittest.TestCase):
         
         with self.assertRaises(VerConError):
             self.assertTrue(good.atPath("unobtain") != None)     
+            
+    def test_endOfLines(self):
+        """
+        A test to see if end of lines are properly parsed.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        propermetadata = ["1,2,3 test\n", "1,2,3 test2\r\n"]
         
+        good = VerConDirectory(propermetadata)
+        self.assertTrue(good.atPath("test") != None)
+        self.assertTrue(good.atPath("test2") != None)        
+         
             
     def test_active(self):
         """
@@ -379,7 +399,7 @@ class TestCommitDirectories(unittest.TestCase):
         vc.commit("First test")
         
         self.assertTrue(os.path.isdir(os.path.join(vc.getDataDir(), dirname)), "%s not created in REPO/DATA"%dirname)
-        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r") as f:
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1 %s"%dirname)
             
     def test_commitSubdirectory(self):
@@ -394,7 +414,7 @@ class TestCommitDirectories(unittest.TestCase):
         vc.commit("First test")
         
         self.assertTrue(os.path.isdir(os.path.join(vc.getDataDir(), dirname)), "%s not created in REPO/DATA"%dirname)
-        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r") as f:
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1 %s\n 1 %s"%("test", "test2"))        
             
             
@@ -413,7 +433,7 @@ class TestCommitDirectories(unittest.TestCase):
         vc.commit("Second test")
         
         self.assertTrue(os.path.isdir(os.path.join(vc.getDataDir(), dirname)), "%s not created in REPO/DATA"%dirname)
-        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r") as f:
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1,2 %s"%dirname)        
         
         
@@ -436,7 +456,7 @@ class TestCommitDirectories(unittest.TestCase):
         vc.commit("Third test")
         
         self.assertTrue(os.path.isdir(os.path.join(vc.getDataDir(), dirname)), "%s not created in REPO/DATA"%dirname)
-        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r") as f:
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "1,2,3 %s"%dirname)            
         
 class TestRevision(unittest.TestCase):
@@ -464,13 +484,13 @@ class TestRevision(unittest.TestCase):
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name,"REPO"))    
         os.mkdir(os.path.join(self.tempDir.name,"REPO","DATA"))
-        with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("1 test")
         
         vc = VerConRepository(self.tempDir.name)
         self.assertEqual(vc.getLastCommit(), 1)
         
-        with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("1 test\n 1,2 subtest")
         
         vc = VerConRepository(self.tempDir.name)
@@ -530,7 +550,7 @@ class TestCommitFiles(unittest.TestCase):
         datat = self.datat
         datab = self.datab
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)
             
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "wb") as f:
@@ -544,7 +564,7 @@ class TestCommitFiles(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "ET1- textfile.txt")), "ET1- textfile.txt not created in REPO/DATA")
             self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "EB1- binfile.bin")), "EB1- binfile.bin not created in REPO/DATA")       
 
-            with open(   os.path.join(vc.getDataDir(), "ET1- textfile.txt"),"r") as f:
+            with open(   os.path.join(vc.getDataDir(), "ET1- textfile.txt"),"r", encoding="utf-8", newline="") as f:
                 self.assertEqual(f.read(), datat)
                 
             with open(os.path.join(vc.getDataDir(), "EB1- binfile.bin"), "rb") as f:
@@ -559,7 +579,7 @@ class TestCommitFiles(unittest.TestCase):
         datat = self.datat
         datab = self.datab        
 
-        with open(os.path.join(self.tempDir.name, "file.one"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "file.one"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)
             
         with open(os.path.join(self.tempDir.name, "file.two"), "wb") as f:
@@ -571,7 +591,7 @@ class TestCommitFiles(unittest.TestCase):
         with open(os.path.join(self.tempDir.name, "file.one"), "wb") as f:
             f.write(datab)
             
-        with open(os.path.join(self.tempDir.name, "file.two"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "file.two"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)       
 
         vc = VerConRepository(self.tempDir.name)
@@ -580,7 +600,7 @@ class TestCommitFiles(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "HT1- file.one")), "HT1- file.one not created in REPO/DATA")
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "HB1- file.two")), "HB1- file.two not created in REPO/DATA")   
 
-        with open(os.path.join(vc.getDataDir(), "HT1- file.one"), "r") as f:
+        with open(os.path.join(vc.getDataDir(), "HT1- file.one"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)
             
         with open(os.path.join(vc.getDataDir(), "HB1- file.two"), "rb") as f:
@@ -613,13 +633,13 @@ class TestCommitFiles(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "D2- textfile.txt")), "D2- textfile.txt not created in REPO/DATA")
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "D2- binfile.bin")), "D2- binfile.bin not created in REPO/DATA")       
 
-        with open(   os.path.join(vc.getDataDir(), "D2- textfile.txt"),"r") as f:
+        with open(   os.path.join(vc.getDataDir(), "D2- textfile.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "")
             
-        with open(os.path.join(vc.getDataDir(), "D2- binfile.bin"), "r") as f:
+        with open(os.path.join(vc.getDataDir(), "D2- binfile.bin"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), "")        
 
-        with open(   os.path.join(vc.getDataDir(), "HT1- textfile.txt"),"r") as f:
+        with open(   os.path.join(vc.getDataDir(), "HT1- textfile.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)
             
         with open(os.path.join(vc.getDataDir(), "HB1- binfile.bin"), "rb") as f:
@@ -637,7 +657,7 @@ class TestCommitFiles(unittest.TestCase):
         datat = self.datat
         datab = self.datab
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)
             
         with open(os.path.join(self.tempDir.name, "binfile.bin"), "wb") as f:
@@ -650,7 +670,7 @@ class TestCommitFiles(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "ET3- textfile.txt")), "ET3- textfile.txt not created in REPO/DATA")
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "EB3- binfile.bin")), "EB3- binfile.bin not created in REPO/DATA")       
 
-        with open(   os.path.join(vc.getDataDir(), "ET3- textfile.txt"),"r") as f:
+        with open(   os.path.join(vc.getDataDir(), "ET3- textfile.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)
             
         with open(os.path.join(vc.getDataDir(), "EB3- binfile.bin"), "rb") as f:
@@ -692,7 +712,7 @@ class TestCommitFiles(unittest.TestCase):
         datadir = os.path.join(self.tempDir.name,"REPO","DATA")
         os.mkdir(os.path.join(self.tempDir.name,"REPO"))
         os.mkdir(os.path.join(datadir))
-        with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"),"w") as f:
+        with open(os.path.join(self.tempDir.name,"REPO","metadatadir.txt"),"w", encoding="utf-8", newline="") as f:
             f.write("")
 
         vc = VerConRepository(self.tempDir.name)
@@ -702,7 +722,7 @@ class TestCommitFiles(unittest.TestCase):
         self.assertIsNone(vc.getFileObject("","test"))
         
         # tests for files with just 1 revision
-        with open(os.path.join(datadir, "ET1- tes1"), "w") as f:
+        with open(os.path.join(datadir, "ET1- tes1"), "w", encoding="utf-8", newline="") as f:
             f.write("test")        
         with open(os.path.join(datadir, "EB1- bin1"), "wb") as f:
             f.write(bytes.fromhex("0000 FFFF 1010 1111"))
@@ -711,26 +731,26 @@ class TestCommitFiles(unittest.TestCase):
             f.write(bytes.fromhex("0000 0101 FFFF 1111")            )
         with open(os.path.join(datadir, "EB2- bin2"), "wb") as f:
             f.write(bytes.fromhex("1111 FFFF 0101 0000") )
-        with open(os.path.join(datadir, "HT1- tes2"), "w") as f: # revision 1 should be equal to foo when restoring
+        with open(os.path.join(datadir, "HT1- tes2"), "w", encoding="utf-8", newline="") as f: # revision 1 should be equal to foo when restoring
             f.write("s 3\ni 3\nfoo")            
-        with open(os.path.join(datadir, "ET2- tes2"), "w") as f:
+        with open(os.path.join(datadir, "ET2- tes2"), "w", encoding="utf-8", newline="") as f:
             f.write("bar")             
         # tests for files that have been deleted
-        with open(os.path.join(datadir, "HT1- tes3"), "w") as f:
+        with open(os.path.join(datadir, "HT1- tes3"), "w", encoding="utf-8", newline="") as f:
             f.write("test")
-        with open(os.path.join(datadir, "D2- tes3"), "w") as f:
+        with open(os.path.join(datadir, "D2- tes3"), "w", encoding="utf-8", newline="") as f:
             f.write("")     
         with open(os.path.join(datadir, "HB1- tes4"), "wb") as f:
             f.write(bytes.fromhex("0000 0101 FFFF 1111")  )
-        with open(os.path.join(datadir, "D2- tes4"), "w") as f:
+        with open(os.path.join(datadir, "D2- tes4"), "w", encoding="utf-8", newline="") as f:
             f.write("")  
             
         # tests for mixed files
         with open(os.path.join(datadir, "HB1- tes5"), "wb") as f:
             f.write(bytes.fromhex("0000 FFFF 1010 1111")  )
-        with open(os.path.join(datadir, "ET2- tes5"), "w") as f:
+        with open(os.path.join(datadir, "ET2- tes5"), "w", encoding="utf-8", newline="") as f:
             f.write("test")  
-        with open(os.path.join(datadir, "HT1- tes6"), "w") as f:
+        with open(os.path.join(datadir, "HT1- tes6"), "w", encoding="utf-8", newline="") as f:
             f.write("test")
         with open(os.path.join(datadir, "EB2- tes6"), "wb") as f:
             f.write(bytes.fromhex("0000 0101 FFFF 1111"))                 
@@ -814,19 +834,19 @@ class TestRetrievePreviousData(unittest.TestCase):
         Tests if when we restore to the last revision, files modified are overwritten.
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         vc = VerConRepository(self.tempDir.name)
         vc.commit("revision 1")
         
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)    
 
         vc = VerConRepository(self.tempDir.name)
         vc.commit("revision 2")       
 
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("moo")
 
         vc = VerConRepository(self.tempDir.name)
@@ -835,7 +855,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc.restoreTo()
         
         # file should be reverted.
-        with open(os.path.join(self.tempDir.name,"test.txt"), "r") as f:      
+        with open(os.path.join(self.tempDir.name,"test.txt"), "r", encoding="utf-8", newline="") as f:      
             self.assertEqual(f.read(), self.datat2)
         
         
@@ -854,9 +874,9 @@ class TestRetrievePreviousData(unittest.TestCase):
         os.mkdir(os.path.join(self.tempDir.name, "dir2"))
 
         
-        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
-        with open(os.path.join(self.tempDir.name,"dir2", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir2", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         vc = VerConRepository(self.tempDir.name)
@@ -865,16 +885,16 @@ class TestRetrievePreviousData(unittest.TestCase):
         os.unlink(os.path.join(self.tempDir.name,"dir2", "test.txt"))
         os.rmdir(os.path.join(self.tempDir.name,"dir2"))
         
-        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)
 
         vc = VerConRepository(self.tempDir.name)
         vc.commit("revision 2")
 
         os.mkdir(os.path.join(self.tempDir.name, "dir2"))
-        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir1", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
-        with open(os.path.join(self.tempDir.name,"dir2", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir2", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
 
         vc = VerConRepository(self.tempDir.name)
@@ -896,7 +916,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
        
         
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         vc = VerConRepository(self.tempDir.name)
@@ -920,9 +940,9 @@ class TestRetrievePreviousData(unittest.TestCase):
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         os.mkdir(os.path.join(self.tempDir.name, "dir"))
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
-        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         vc = VerConRepository(self.tempDir.name)
@@ -933,9 +953,9 @@ class TestRetrievePreviousData(unittest.TestCase):
         #    for f in files:
         #        print(os.path.join(root, f))
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)
-        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)
             
         vc = VerConRepository(self.tempDir.name)
@@ -946,9 +966,9 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(1,"^test") # should not restore dir/test.txt
 
-        with open(os.path.join(self.tempDir.name, "test.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat)
-        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat2)
             
 
@@ -959,9 +979,9 @@ class TestRetrievePreviousData(unittest.TestCase):
         # print("^%s"%os.path.join("dir","test").replace("\\","\\\\"))
         vc.restoreTo(1,"^%s"%os.path.join("dir","test").replace("\\","\\\\")) # should only restore dir/test.txt        
 
-        with open(os.path.join(self.tempDir.name, "test.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat)
-        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name,"dir", "test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat)
 
         
@@ -972,26 +992,26 @@ class TestRetrievePreviousData(unittest.TestCase):
         ensure the files are not restored anyway.
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         vc = VerConRepository(self.tempDir.name)
         vc.commit("revision 1")
         
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)    
 
         vc = VerConRepository(self.tempDir.name)
         vc.commit("revision 2")       
 
-        with open(os.path.join(self.tempDir.name,"test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("moo")
             
         vc = VerConRepository(self.tempDir.name)
         with self.assertRaises(VerConError):
             vc.restoreTo(1)
         
-        with open(os.path.join(self.tempDir.name,"test.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name,"test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(),"moo")
         
     def test_twoCommitsAndARestoreText(self):
@@ -1005,13 +1025,13 @@ class TestRetrievePreviousData(unittest.TestCase):
         newdatat = "some extra\ntext text\n"
         
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)
 
         vc = VerConRepository(self.tempDir.name)            
         vc.commit("no reason")        
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(newdatat) 
         
         vc = VerConRepository(self.tempDir.name)            
@@ -1020,7 +1040,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)   
         vc.restoreTo(1)
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"),"r") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)          
             
     def test_twoCommitsAndARestoreBinary(self):
@@ -1104,7 +1124,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)        
         vc = VerConRepository(self.tempDir.name)            
         vc.commit("no reason")  
@@ -1116,7 +1136,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(1)        
         self.assertTrue(os.path.isfile(os.path.join(self.tempDir.name, "textfile.txt")), "testfile.txt existed in revision 1")
-        with open(os.path.join(self.tempDir.name, "textfile.txt"),"r") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)   
 
     def test_fileDeletedBinary(self):
@@ -1145,7 +1165,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
         self.test_fileDeletedText()
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("this is new data")        
         vc = VerConRepository(self.tempDir.name)            
         vc.commit("no reason")         
@@ -1153,7 +1173,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(1)         
         self.assertTrue(os.path.isfile(os.path.join(self.tempDir.name, "textfile.txt")), "testfile.txt existed in revision 1")
-        with open(os.path.join(self.tempDir.name, "textfile.txt"),"r") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"),"r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)       
 
         # we restore last good point of repository
@@ -1201,7 +1221,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         newdatab = bytes.fromhex("0001 1010 0101 0101 FFFF 0000")
         newdatat = "This is \n a test among tests."
         
-        with open(os.path.join(self.tempDir.name, "dualfile"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "dualfile"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)
         vc = VerConRepository(self.tempDir.name)            
         vc.commit("no reason")         
@@ -1221,7 +1241,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)            
         vc.commit("no reason")  
 
-        with open(os.path.join(self.tempDir.name, "dualfile"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "dualfile"), "w", encoding="utf-8", newline="") as f:
             f.write(newdatat) 
 
         vc = VerConRepository(self.tempDir.name)            
@@ -1231,7 +1251,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)            
         vc.commit("no reason")    
 
-        with open(os.path.join(self.tempDir.name, "dualfile"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "dualfile"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)            
         
         vc = VerConRepository(self.tempDir.name)            
@@ -1247,7 +1267,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(1)            
         
-        with open(os.path.join(self.tempDir.name, "dualfile"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "dualfile"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)
         
         vc = VerConRepository(self.tempDir.name)
@@ -1274,7 +1294,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(5)      
 
-        with open(os.path.join(self.tempDir.name, "dualfile"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "dualfile"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), newdatat)      
 
         vc = VerConRepository(self.tempDir.name)
@@ -1283,7 +1303,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(7)            
         
-        with open(os.path.join(self.tempDir.name, "dualfile"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "dualfile"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)
         
         vc = VerConRepository(self.tempDir.name)
@@ -1301,15 +1321,15 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         datat = self.datat
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)                
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 1")
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)   
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 2")
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("e")   
         os.unlink(os.path.join(self.tempDir.name, "textfile.txt"))
         vc = VerConRepository(self.tempDir.name)
@@ -1319,7 +1339,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc.restoreTo(2)
         
         self.assertTrue(os.path.isfile(os.path.join(self.tempDir.name, "textfile.txt")))
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)
             
     def test_fileRestoreBetweenRevisionsBinary_ExistBefore(self):
@@ -1336,11 +1356,11 @@ class TestRetrievePreviousData(unittest.TestCase):
             f.write(datab)                
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 1")
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)   
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 2")
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("e")   
         os.unlink(os.path.join(self.tempDir.name, "binfile.bin"))
         vc = VerConRepository(self.tempDir.name)
@@ -1362,20 +1382,20 @@ class TestRetrievePreviousData(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)        
         datat = self.datat
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)                
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 1")
         os.unlink(os.path.join(self.tempDir.name, "textfile.txt"))
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)   
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 2")
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("e")   
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 3")   
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("some new stuff yeah")                        
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 4")  
@@ -1401,11 +1421,11 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 1")
         os.unlink(os.path.join(self.tempDir.name, "binfile.bin"))
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)   
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 2")
-        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile2.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("e")   
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 3")   
@@ -1490,18 +1510,18 @@ class TestRetrievePreviousData(unittest.TestCase):
         datat = self.datat
         newd1 = "some text\nThis is new text"
         newd2 = "some\ntext\nThis is newer text\n"
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(datat)
             
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 1")
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(newd1)
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 2")      
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(newd2)        
         vc = VerConRepository(self.tempDir.name)
         vc.commit("test 3")               
@@ -1509,7 +1529,7 @@ class TestRetrievePreviousData(unittest.TestCase):
         vc = VerConRepository(self.tempDir.name)
         vc.restoreTo(1)
         
-        with open(os.path.join(self.tempDir.name, "textfile.txt"), "r") as f:
+        with open(os.path.join(self.tempDir.name, "textfile.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), datat)     
             
     
@@ -1644,14 +1664,14 @@ class testVerConFile(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)
             
         f = VerConFile("test.txt", self.rootDir, self.dataDir, "")
         f.createAtRevision(1)
         
         data = f.contentsAt(1)
-        with open(os.path.join(self.rootDir, "test.txt"), "r") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(),self.t1)        
         
         
@@ -1673,13 +1693,13 @@ class testVerConFile(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)
             
         vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")
         vcf.createAtRevision(1)
         
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t2)
             
         vcf.changeAtRevision(2)
@@ -1718,7 +1738,7 @@ class testVerConFile(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
-        with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.tst"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)
             
         vcf = VerConFile("test.tst", self.rootDir, self.dataDir, "")
@@ -1746,7 +1766,7 @@ class testVerConFile(unittest.TestCase):
         vcf = VerConFile("test.tst", self.rootDir, self.dataDir, "")
         vcf.createAtRevision(1)
         
-        with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.tst"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t2)
             
         vcf.changeAtRevision(2)
@@ -1763,7 +1783,7 @@ class testVerConFile(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
-        with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.tst"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)
             
         vcf = VerConFile("test.tst", self.rootDir, self.dataDir, "")
@@ -1785,7 +1805,7 @@ class testVerConFile(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
-        with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.tst"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)
             
         vcf = VerConFile("test.tst", self.rootDir, self.dataDir, "")
@@ -1795,12 +1815,12 @@ class testVerConFile(unittest.TestCase):
             
         vcf.deleteAtRevision(2)
         
-        with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.tst"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t2)
             
         vcf.changeAtRevision(3)
         
-        with open(os.path.join(self.rootDir, "test.tst"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.tst"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t3)        
             
         vcf.changeAtRevision(4)
@@ -1885,7 +1905,7 @@ class testVerConFile(unittest.TestCase):
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
         with open(os.path.join(self.rootDir, "test.bin"), "wb") as f:
             f.write(self.b1)        
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)     
             
         vcf = VerConFile("test.bin", "", "", "")
@@ -1909,7 +1929,7 @@ class testVerConFile(unittest.TestCase):
 
         with open(os.path.join(self.rootDir, self.subdir,"test.tst"), "wb") as f:
             f.write(self.b1)
-        with open(os.path.join(self.rootDir, self.subdir,"test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, self.subdir,"test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.t1)
             
         vcf = VerConFile("test.tst", self.rootDir, self.dataDir, self.subdir)
@@ -1989,11 +2009,11 @@ class testVerConFile(unittest.TestCase):
             ]
 
         for t in datalist:
-            with open(os.path.join(self.dataDir, "HT1- test"), "w") as f: 
+            with open(os.path.join(self.dataDir, "HT1- test"), "w", encoding="utf-8", newline="") as f: 
                 f.write(t["delta2-1"])            
-            with open(os.path.join(self.dataDir, "HT2- test"), "w") as f:
+            with open(os.path.join(self.dataDir, "HT2- test"), "w", encoding="utf-8", newline="") as f:
                 f.write(t["delta3-2"])      
-            with open(os.path.join(self.dataDir, "ET3- test"), "w") as f:
+            with open(os.path.join(self.dataDir, "ET3- test"), "w", encoding="utf-8", newline="") as f:
                 f.write(t["file3"])
 
             vcf = VerConFile("test", self.rootDir, self.dataDir, "")    
@@ -2032,7 +2052,7 @@ class testVerConFile(unittest.TestCase):
         Ensures file comparison works in case the two files are identical and have same metadata
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("Similar")
         
         # copy also metadata such as creation time and date
@@ -2049,7 +2069,7 @@ class testVerConFile(unittest.TestCase):
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
 
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("Similar")
         
         time.sleep(2)
@@ -2067,10 +2087,10 @@ class testVerConFile(unittest.TestCase):
         Ensures file comparison works in case the two files are different, but have same metadata
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("Similar")
         
-        with open(os.path.join(self.dataDir, "ET1- test.txt"), "w") as f:
+        with open(os.path.join(self.dataDir, "ET1- test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("Differe")
 
         stinfo = os.stat(os.path.join(self.rootDir, "test.txt"))
@@ -2087,12 +2107,12 @@ class testVerConFile(unittest.TestCase):
         Ensures file comparison works in case the two files are different and do not have same metadata
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
-        with open(os.path.join(self.rootDir, "test.txt"), "w") as f:
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("Similar")
             
         time.sleep(2)
         
-        with open(os.path.join(self.dataDir, "ET1- test.txt"), "w") as f:
+        with open(os.path.join(self.dataDir, "ET1- test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write("Differe")
         
         vcf = VerConFile("test.txt", self.rootDir, self.dataDir, "")   
@@ -2142,12 +2162,12 @@ class testVerConFile(unittest.TestCase):
             
         shutil.copy(os.path.join("testdata", "data.rpy"), os.path.join(self.rootDir, "data.rpy"))
         
-        with open(os.path.join(self.rootDir, "data.rpy"), "r") as f:
+        with open(os.path.join(self.rootDir, "data.rpy"), "r", encoding="utf-8", newline="") as f:
             data = f.read()
         
         time.sleep(2)
         
-        with open(os.path.join(self.dataDir, "ET1- data.rpy"), "w") as f:
+        with open(os.path.join(self.dataDir, "ET1- data.rpy"), "w", encoding="utf-8", newline="") as f:
             f.write(data)
         
         vcf = VerConFile("data.rpy", self.rootDir, self.dataDir, "")   
@@ -2174,9 +2194,9 @@ class testVerConFile(unittest.TestCase):
         vc = VerConRepository(self.rootDir)
         vc.commit("un second accent")
         
-        for root, dirs, files in os.walk(self.rootDir):
-            for f in files:
-                print(os.path.join(root, f))
+        #for root, dirs, files in os.walk(self.rootDir):
+        #    for f in files:
+        #        print(os.path.join(root, f))
         
         try:
             vcf = VerConFile("data.rpy", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
@@ -2188,6 +2208,102 @@ class testVerConFile(unittest.TestCase):
             vcf.loadEvent("e",1,"t","ET1- data.rpy")        
 
             self.assertFalse(vcf.isModified())           
+            
+    def test_isModified_FalseRealWorldSituation_Html(self):
+        """
+        Ensure file comparison returns false when files are committed that contain HTML code.
+        
+        In this situation, after the first commit and one modification, the newest file seems to be considered as "modified" even
+        if it was not.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        
+        shutil.copy(os.path.join("testdata", "Une Breve.html"), os.path.join(self.rootDir, "Une Breve.html"))
+        
+        vc = VerConRepository(self.rootDir)
+        vc.commit("du html")
+
+        self.assertEqual(vc.getLastCommit(), 1)
+        
+        vcf = VerConFile("Une Breve.html", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
+        vcf.loadEvent("e",1,"t","ET1- Une Breve.html")        
+
+        self.assertFalse(vcf.isModified())   
+
+        # I modify the file and add a final line.
+        with open( os.path.join(self.rootDir, "Une Breve.html"), "a", encoding="utf-8", newline="") as f:
+            f.write("<!-- a test comment ééàà -->")
+        
+        vc = VerConRepository(self.rootDir)
+        vc.commit("encore du html")
+
+        self.assertEqual(vc.getLastCommit(), 2)
+        # here nothing should happen...
+        
+        #shutil.copy(os.path.join(self.rootDir, "Une Breve.html"), "temp")
+        #shutil.copy(os.path.join(self.rootDir,"REPO", "DATA", "ET2- Une Breve.html"), "temp")
+        
+        vc = VerConRepository(self.rootDir)
+        vc.commit("encore encore du html")
+        
+        self.assertEqual(vc.getLastCommit(), 2)
+        
+        #for root, dirs, files in os.walk(self.rootDir):
+        #    for f in files:
+        #        print(os.path.join(root, f))
+        try:
+            vcf = VerConFile("Une Breve.html", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
+            vcf.loadEvent("e",3,"t","ET3- Une Breve.html")        
+
+            self.assertFalse(vcf.isModified())
+        except FileNotFoundError:
+                vcf = VerConFile("Une Breve.html", self.rootDir, os.path.join(self.rootDir,"REPO", "DATA"), "")   
+                vcf.loadEvent("e",2,"t","ET2- Une Breve.html")        
+
+                self.assertFalse(vcf.isModified())        
+
+    def test_isModified_endLinesAreDifferent(self):
+        """
+        This tests that the end of lines \n or \r\n are propagated correctly and do not mess up revisions.
+        """
+        logging.info("Running %s"%inspect.currentframe().f_code.co_name)
+        
+        with open(os.path.join(self.rootDir, "test.txt"), "w", encoding="utf-8", newline="") as f:
+            f.write("End of line\nEnd of other line\r\n")
+
+        vc = VerConRepository(self.rootDir)
+        vc.commit("a first commit")        
+
+        vc = VerConRepository(self.rootDir)
+        vc.commit("a second commit")          
+
+        self.assertEqual(vc.getLastCommit(), 1, "The second commit should not consider that there are differences") 
+
+        with open(os.path.join(self.rootDir, "test.txt"), "a", encoding="utf-8", newline="") as f:
+            f.write("\n")      
+
+        vc = VerConRepository(self.rootDir)
+        vc.commit("a third commit")             
+
+        self.assertEqual(vc.getLastCommit(), 2)      
+
+        vc = VerConRepository(self.rootDir)
+        vc.commit("a fourth commit")        
+
+        self.assertEqual(vc.getLastCommit(), 2, "The fourth commit should not consider that there are differences")      
+        
+        with open(os.path.join(self.rootDir, "test.txt"), "a", encoding="utf-8", newline="") as f:
+            f.write("\r\n")
+
+        vc = VerConRepository(self.rootDir)
+        vc.commit("a fifth commit")       
+
+        self.assertEqual(vc.getLastCommit(), 3)     
+
+        vc = VerConRepository(self.rootDir)
+        vc.commit("a sixth commit")       
+
+        self.assertEqual(vc.getLastCommit(), 3, "The sixth commit should not consider that there are differences")           
         
     def test_isModified_TrueWhenModifications_DateSimilar_Binary(self):
         """
@@ -2248,27 +2364,27 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         Are the BAK%d files created during commit, and do they contain the backup data?
         """
         logging.info("Running %s"%inspect.currentframe().f_code.co_name)
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
         
         os.mkdir(os.path.join(self.tempDir.name, "pouet"))
 
-        with open(os.path.join(self.tempDir.name, os.path.join("pouet","test.txt")), "w") as f:
+        with open(os.path.join(self.tempDir.name, os.path.join("pouet","test.txt")), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         vc = VerConRepository(self.tempDir.name)
         
         vc.commit("First commit")
         
-        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"), "r") as f:
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"), "r", encoding="utf-8", newline="") as f:
             meta = f.read()
-        with open(os.path.join(vc.getRepoDir(), "commits.txt"), "r") as f:
+        with open(os.path.join(vc.getRepoDir(), "commits.txt"), "r", encoding="utf-8", newline="") as f:
             comm = f.read()
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)    
 
-        with open(os.path.join(self.tempDir.name, os.path.join("pouet","test.txt")), "w") as f:
+        with open(os.path.join(self.tempDir.name, os.path.join("pouet","test.txt")), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)            
             
         vc = VerConRepository(self.tempDir.name)
@@ -2278,13 +2394,13 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- commits.txt")))
         self.assertTrue(os.path.isfile(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt")))
 
-        with open(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt"), "r") as f:
+        with open(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat)
-        with open(os.path.join(vc.getDataDir(), os.path.join("pouet","BAK2- ET1- test.txt")), "r") as f:
+        with open(os.path.join(vc.getDataDir(), os.path.join("pouet","BAK2- ET1- test.txt")), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat) 
-        with open(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt"), "r") as f:
+        with open(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), meta)
-        with open(os.path.join(vc.getRepoDir(), "BAK2- commits.txt"), "r") as f:
+        with open(os.path.join(vc.getRepoDir(), "BAK2- commits.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), comm)
             
     def test_loadAfterCommitFail(self):
@@ -2301,7 +2417,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         datasubdir=os.path.join(self.tempDir.name,"REPO","DATA","testdir")
         os.mkdir(subdir)
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         with open(os.path.join(subdir, "test.bin"), "wb") as f:
@@ -2311,17 +2427,17 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         
         vc.commit("First commit")       
 
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)        
             
         with open(os.path.join(subdir, "test.bin"), "wb") as f:
             f.write(self.datab2)
             
         # save data before backup
-        with open(os.path.join(self.repoDir, "commits.txt"), "r") as f:
+        with open(os.path.join(self.repoDir, "commits.txt"), "r", encoding="utf-8", newline="") as f:
             datacommit = f.read()
             
-        with open(os.path.join(self.repoDir, "metadatadir.txt"), "r") as f:
+        with open(os.path.join(self.repoDir, "metadatadir.txt"), "r", encoding="utf-8", newline="") as f:
             datadirs = f.read()
         
         # To ensure metadatadir.txt changes between first and second commit.
@@ -2332,7 +2448,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         vc.commit("Second commit")   
         
         # Lock contains the last revision number.
-        with open(os.path.join(self.repoDir, "LOCK"), "w") as f:
+        with open(os.path.join(self.repoDir, "LOCK"), "w", encoding="utf-8", newline="") as f:
             f.write("2")
             f.close()
 
@@ -2344,15 +2460,15 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- metadatadir.txt")))
         self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK2- commits.txt")))
 
-        with open(os.path.join(self.repoDir, "commits.txt"), "r") as f:
+        with open(os.path.join(self.repoDir, "commits.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(datacommit, f.read())
             
-        with open(os.path.join(self.repoDir, "metadatadir.txt"), "r") as f:
+        with open(os.path.join(self.repoDir, "metadatadir.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(datadirs, f.read())
         
         self.assertFalse(os.path.isfile(os.path.join(vc.getDataDir(), "BAK2- ET1- test.txt")))
         self.assertFalse(os.path.isfile(os.path.join(vc.getDataDir(), "HT1- test.txt")))
-        with open(os.path.join(vc.getDataDir(),"ET1- test.txt"), "r") as f:
+        with open(os.path.join(vc.getDataDir(),"ET1- test.txt"), "r", encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), self.datat, "Restored file data is not equal to the backup!")
 
         self.assertFalse(os.path.isfile(os.path.join(datasubdir, "BAK2- EB1- test.bin")))
@@ -2376,7 +2492,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         datasubdir=os.path.join(self.tempDir.name,"REPO","DATA","testdir")
         os.mkdir(subdir)
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         with open(os.path.join(subdir, "test.bin"), "wb") as f:
@@ -2387,7 +2503,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         vc.commit("First commit")               
         
         # Lock contains the last revision number.
-        with open(os.path.join(self.repoDir, "LOCK"), "w") as f:
+        with open(os.path.join(self.repoDir, "LOCK"), "w", encoding="utf-8", newline="") as f:
             f.write("1")
             f.close()        
             
@@ -2403,11 +2519,11 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK1- metadatadir.txt")))
         self.assertFalse(os.path.isfile(os.path.join(vc.getRepoDir(), "BAK1- commits.txt")))
         
-        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r") as f:
+        with open(os.path.join(vc.getRepoDir(), "metadatadir.txt"),"r", encoding="utf-8", newline="") as f:
             data = f.read()
             self.assertEqual(data, "", "metadatadir.txt is not empty, contains %s"%data)
 
-        with open(os.path.join(vc.getRepoDir(), "commits.txt"),"r") as f:
+        with open(os.path.join(vc.getRepoDir(), "commits.txt"),"r", encoding="utf-8", newline="") as f:
             data = f.read()
             self.assertEqual(data, "", "commits.txt is not empty, contains %s"%data)
 
@@ -2425,7 +2541,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         datasubdir=os.path.join(self.tempDir.name,"REPO","DATA","testdir")
         os.mkdir(subdir)
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)
             
         with open(os.path.join(subdir, "test.bin"), "wb") as f:
@@ -2435,7 +2551,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         
         vc.commit("First commit")       
 
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat2)        
             
         with open(os.path.join(subdir, "test.bin"), "wb") as f:
@@ -2450,7 +2566,7 @@ class TestCase_SafetyMechanism(unittest.TestCase):
         vc.commit("Second commit")     
         
         
-        with open(os.path.join(self.tempDir.name, "test.txt"), "w") as f:
+        with open(os.path.join(self.tempDir.name, "test.txt"), "w", encoding="utf-8", newline="") as f:
             f.write(self.datat)        
             
         with open(os.path.join(subdir, "test.bin"), "wb") as f:

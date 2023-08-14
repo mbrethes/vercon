@@ -178,16 +178,23 @@ SOLVED:
 
 
 B2 (or 1.0)
+SOLVED:
+- CRITICAL : some text files are still detected as "modified" even if they were not changed??? (see "site" and HTML files): this happens when end of line is not \n but \r\n
+- BUG : in the commit log, when committing sub-subdirectories, only last directory is displayed (and not full path from root of project)
+
+TODO/BUGS:
 - code refactoring
 - proper project documentation
 - more testing!
-- BUG : spurious final new line inserted to restored files when original may not have had one (good luck...).
+- BUG? : spurious final new line may be inserted to restored files when original may not have had one (good luck...).
+- BUG : when displaying commit log, extra end of lines are added at the end of the display.
 
 
 03.07: almost finished
 14.07: Alpha 1 reached
 20.07: Alpha 2 reached, moved safety mechanism milestone for B1.
 01.08: implemented basic rollback mechanism, needs more tests!
+14.08: major blockers were removed.
 
 """
 
@@ -430,7 +437,7 @@ class VerConFile():
         if self.events[objective].event == "e":
             rtype = "r"
             if self.events[objective].type == "t":
-                with open(os.path.join(self.datap, self.frelp, self.events[objective].fname),"r", encoding="utf-8") as f:
+                with open(os.path.join(self.datap, self.frelp, self.events[objective].fname),"r", encoding="utf-8", newline='') as f:
                     data = f.read()
             else:
                 with open(os.path.join(self.datap, self.frelp, self.events[objective].fname),"rb") as f:
@@ -511,7 +518,7 @@ class VerConFile():
             else:
                 soutcodes.append("%s %d\n"%(type, count))
                 
-        logger.debug("calculateDelta: Computed the following opcodes: %s"%soutcodes)
+        logger.debug("calculateDelta: Computed the following opcodes: %r"%soutcodes)
                 
         return "".join(soutcodes)
     
@@ -540,7 +547,7 @@ class VerConFile():
         
         final = self.events[revList.pop()] # get the last event index
         
-        with open(os.path.join(self.datap,self.frelp,final.fname), "r", encoding="utf-8") as f:
+        with open(os.path.join(self.datap,self.frelp,final.fname), "r", encoding="utf-8", newline='') as f:
             data = f.readlines()
             
         logger.debug("mergeTextBackwards: We have %s as data"%data)
@@ -548,7 +555,7 @@ class VerConFile():
         revList.reverse()
         matcher = re.compile("(^[isc]) (\d+)$")
         for i in revList:
-            with open(os.path.join(self.datap,self.frelp,self.events[i].fname), "r", encoding="utf-8") as f:
+            with open(os.path.join(self.datap,self.frelp,self.events[i].fname), "r", encoding="utf-8", newline='') as f:
                 deltas = f.readlines()      
                 
                 logger.debug("mergeTextBackwards: We have %s as deltas for revision %d"%(deltas, i))
@@ -560,18 +567,18 @@ class VerConFile():
                     if command == None:
                         raise VerConError("data %s does not start with a valid command."%deltas[indexdelta:])
                     
-                    indexdelta += 1 # we need to add 1 extra character for the hidden \n at the end of each line.
+                    indexdelta += 1 # we need to add 1 extra lines for the hidden \n at the end of each line.
                     action = command.group(1)
                     count = int(command.group(2))
                     
-                    # skip action: we skip X characters of old data.
+                    # skip action: we skip X lines of old data.
                     if action == "s":
                         indexdata += count
-                    # copy action: we copy X characters of old data to new data.
+                    # copy action: we copy X lines of old data to new data.
                     elif action == "c":
                         newdata.extend(data[indexdata:indexdata+count])
                         indexdata += count
-                    # insert action: we insert X characters from deltas, to new data.
+                    # insert action: we insert X lines from deltas, to new data.
                     elif action == "i":
                         newdata.extend(deltas[indexdelta:indexdelta+count])
                         indexdelta += count
@@ -591,11 +598,13 @@ class VerConFile():
         or as a binary line.
         
         File must exist, otherwise...
+        
+        Added universal new lines.
         """
         data = None
         type = None
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8',newline='') as f:
                 data = f.readlines()
                 type = "t"
         except UnicodeDecodeError:
@@ -709,12 +718,12 @@ class VerConFile():
                 elif lastevent.type == "t":
                     newnameforhistory = "HT%d- %s"%(self.lastrevision,self.name)
                     
-                    with open(os.path.join(self.datap,self.frelp,newnameforhistory), "w", encoding="utf-8") as f:                    
+                    with open(os.path.join(self.datap,self.frelp,newnameforhistory), "w", encoding="utf-8", newline='') as f:                    
                         olddata = ""
-                        with open(os.path.join(self.datap, self.frelp, lastevent.fname),"r", encoding="utf-8") as f2:
+                        with open(os.path.join(self.datap, self.frelp, lastevent.fname),"r", encoding="utf-8", newline='') as f2:
                             olddata = f2.readlines()                            
                         f.write(self.calculateDelta(data,olddata))
-                    # we remove the now useless file (TODO : a rollback mechanism).
+                    # we remove the now useless file.
                     os.unlink(os.path.join(self.datap, self.frelp, lastevent.fname))  
                     
                 else:
@@ -733,12 +742,15 @@ class VerConFile():
         else:
             raise VerConError("File type %s not implemented."%type)
             
+        shutil.copy2(filename, os.path.join(self.datap,self.frelp,datafname))
+        
+        """
         opentype = ""
         if type == "b":
             with open(os.path.join(self.datap, self.frelp, datafname),"wb") as f:
                 f.write(data)
         elif type == "t":
-            with open(os.path.join(self.datap, self.frelp, datafname),"w", encoding="utf-8") as f:
+            with open(os.path.join(self.datap, self.frelp, datafname),"w", encoding="utf-8", newline='') as f:
                 f.write("".join(data))           
         else:
             raise VerConError("File type %s not implemented."%type)
@@ -746,6 +758,7 @@ class VerConFile():
             
         stinfo = os.stat(filename)
         os.utime(os.path.join(self.datap,self.frelp,datafname),ns=(stinfo.st_atime_ns, stinfo.st_mtime_ns))
+        """
         
         self.loadEvent("e", revision, type, datafname)
         self.lastrevision = revision
@@ -790,7 +803,7 @@ class VerConFile():
         # finally we create the delete event. It's just an empty file.
         
         newname = "D%d- %s"%(revision, self.name)
-        with open(os.path.join(self.datap, self.frelp, newname), "w", encoding="utf-8") as f:
+        with open(os.path.join(self.datap, self.frelp, newname), "w", encoding="utf-8", newline='') as f:
             f.write("")
             
         self.loadEvent("d", revision, "b", newname)
@@ -817,7 +830,13 @@ class VerConFile():
         """
         Returns true if the file in user space is different than the file in the repository.
         """        
-        return not filecmp.cmp(os.path.join(self.rootp, os.path.join(self.frelp, self.name)), self.getLastEventFileNameAndPath(), shallow=False)
+        me = os.path.join(self.rootp, os.path.join(self.frelp, self.name))
+        other = self.getLastEventFileNameAndPath()
+        logger.debug("isModified: Comparing %s with %s"%(me, other))
+        res = not filecmp.cmp(me, other, shallow=False)
+        logger.debug("isModified: result of comparison is %d (0: identical, 1: different)"%res)
+        # filecmp.clear_cache()
+        return res
         
     def createBackup(self, revision):
         """
@@ -877,7 +896,9 @@ class VerConDirectory():
             
             # let's create the tree...
             for line in metadata:        
-                data = re.match("^( *)(\d+(?:,\d+)*) (.*)$", line)
+                logger.debug("VerConDirectory constructor: we have line %r"%line)
+                # \\r resolves an issue in case 
+                data = re.match(r"^( *)(\d+(?:,\d+)*) (.*?)(?:\r)?$", line)
                 if data != None:
                     newlevel = len(data.group(1))
                     if newlevel > level + 1:
@@ -899,6 +920,8 @@ class VerConDirectory():
                     # are we going back up the tree?
                     else:
                         currentpath = currentpath[:(level - newlevel)]
+                        
+                    logger.debug("VerConDirectory constructor: calculated directory name: %r"%name)
 
                     node = currentpath[-1].addChild(name, history)
                     lastnode = node
@@ -1283,7 +1306,7 @@ class VerConDirectory():
                 with open(os.path.join(rootdir, f.frelp, f.name), "wb") as out:
                     out.write(f.contentsAt(revision))
             else:
-                with open(os.path.join(rootdir, f.frelp, f.name), "w", encoding="utf-8") as out:
+                with open(os.path.join(rootdir, f.frelp, f.name), "w", encoding="utf-8", newline='') as out:
                     out.write(f.contentsAt(revision))                
 
                 
@@ -1379,9 +1402,9 @@ class VerConDirectory():
         if self.name != "":
             if self.history[-1] == lastcommit:
                 if len(self.history) %2 == 0:
-                    lines.append("  -d %s"%self.name)
+                    lines.append("  -d %s"%self.getPath())
                 else:
-                    lines.append("  +d %s"%self.name)                    
+                    lines.append("  +d %s"%self.getPath())                  
         for k,f in sorted(self.childfiles.items()):
             e = f.getEventAtRevision(lastcommit)
             if e != None:
@@ -1435,7 +1458,7 @@ class VerConRepository():
                     self.unlockRepository()
 
                 # now we can create our data structure with (hopefully) clean data.
-                with open(os.path.join(self.repodir, "metadatadir.txt"),"r", encoding="utf-8") as f:
+                with open(os.path.join(self.repodir, "metadatadir.txt"),"r", encoding="utf-8", newline='') as f:
                     self.dirDb   = VerConDirectory(f.readlines())
                     self.precomputeFileDB(self.datadir, "")
                     
@@ -1449,9 +1472,9 @@ class VerConRepository():
             self.repodir = os.path.join(directory, "REPO")
             self.datadir = os.path.join(directory, "REPO", "DATA")
             self.basedir = directory
-            with open(os.path.join(self.repodir, "metadatadir.txt"),"w", encoding="utf-8") as f:
+            with open(os.path.join(self.repodir, "metadatadir.txt"),"w", encoding="utf-8", newline='') as f:
                 f.close()
-            with open(os.path.join(self.repodir, "commits.txt"),"w", encoding="utf-8") as f:
+            with open(os.path.join(self.repodir, "commits.txt"),"w", encoding="utf-8", newline='') as f:
                 f.close()
             self.dirDb = VerConDirectory([])
                  
@@ -1502,14 +1525,14 @@ class VerConRepository():
             self.backupMetadata(newcommit)
             self.lastcommit = newcommit
                         
-            with open(os.path.join(self.repodir, "metadatadir.txt"),"w", encoding="utf-8") as f:
+            with open(os.path.join(self.repodir, "metadatadir.txt"),"w", encoding="utf-8", newline='') as f:
                 f.write(self.dirDb.__repr__())
                        
             lines = ["%d. %s"%(self.lastcommit, comment)]
         
             lines.extend(self.dirDb.generateCommitLog(self.lastcommit))
             
-            with open(os.path.join(self.repodir, "commits.txt"), "a", encoding="utf-8") as f:
+            with open(os.path.join(self.repodir, "commits.txt"), "a", encoding="utf-8", newline='') as f:
                 f.write("\n".join(lines))
                 f.write("\n\n")
                 
@@ -1613,7 +1636,7 @@ class VerConRepository():
             v1 : implemented level 1, level 2 not just yet.
         """
         data = []
-        with open(os.path.join(self.repodir, "commits.txt"),"r", encoding="utf-8") as f:
+        with open(os.path.join(self.repodir, "commits.txt"),"r", encoding="utf-8", newline='') as f:
             for line in f.readlines():
                 if verbose > 0:
                     data.append(line)
@@ -1664,6 +1687,7 @@ class VerConRepository():
         regin = re.compile("^([EH])([BT])", re.I)
         for item in os.scandir(os.path.join(dataDir, relPath)):
             if item.is_file():
+                logger.debug("precomputeFileDB: found file %s"%item.name)
                 match = regevent.match(item.name)
                 if match != None:
                     evt = match.group(1)
@@ -1694,6 +1718,7 @@ class VerConRepository():
                         
                         obj.loadEvent(evt, rev, typ, item.name)
             if item.is_dir():
+                logger.debug("precomputeFileDB: recursing in %s"%item.name)
                 self.precomputeFileDB(dataDir, os.path.join(relPath, item.name))
                 
         
@@ -1717,7 +1742,7 @@ class VerConRepository():
         """
         if os.path.isfile(os.path.join(self.getRepoDir(), "LOCK")):
             raise VerConError("LOCKed repository, something went wrong, this should never happen when this function is called. recover() should be called to clean first.")
-        with open(os.path.join(self.getRepoDir(), "LOCK"), "w", encoding="utf-8") as f:
+        with open(os.path.join(self.getRepoDir(), "LOCK"), "w", encoding="utf-8", newline='') as f:
             f.write("%d"%(self.getLastCommit() + 1))
         
     def unlockRepository(self):
@@ -1733,7 +1758,7 @@ class VerConRepository():
         """
         rev = -1
         if os.path.isfile(os.path.join(self.getRepoDir(), "LOCK")):
-            with open(os.path.join(self.getRepoDir(), "LOCK"), "r", encoding="utf-8") as f:
+            with open(os.path.join(self.getRepoDir(), "LOCK"), "r", encoding="utf-8", newline='') as f:
                 rev = int(f.read())
 
         return rev
