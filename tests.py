@@ -313,6 +313,26 @@ class TestVerConDirectory(unittest.TestCase):
         self.assertTrue(dirs.atPath("test2").isCurrentlyActive())
         with self.assertRaises(VerConError):
             self.assertTrue(dirs.atPath(os.path.join("test", "test2")).isCurrentlyActive())
+
+        
+        # 02.02.2025 added testing situation with subdirectories, then coming down.            
+        dirs = VerConDirectory(["1 docs"," 1 doctrees","  5 generated"," 5 html"])
+        self.assertTrue(dirs.atPath("docs").isCurrentlyActive())
+        self.assertTrue(dirs.atPath(os.path.join("docs", "doctrees")).isCurrentlyActive())
+        self.assertTrue(dirs.atPath(os.path.join("docs", "doctrees", "generated")).isCurrentlyActive())                
+        self.assertTrue(dirs.atPath(os.path.join("docs", "html")).isCurrentlyActive())
+        with self.assertRaises(VerConError):
+            self.assertTrue(dirs.atPath("html").isCurrentlyActive())        
+            
+            
+        dirs = VerConDirectory(["1 docs"," 1 doctrees","  5 generated","   5 hahah", " 5 html"])
+        self.assertTrue(dirs.atPath("docs").isCurrentlyActive())
+        self.assertTrue(dirs.atPath(os.path.join("docs", "doctrees")).isCurrentlyActive())
+        self.assertTrue(dirs.atPath(os.path.join("docs", "doctrees", "generated")).isCurrentlyActive())            
+        self.assertTrue(dirs.atPath(os.path.join("docs", "doctrees", "generated", "hahah")).isCurrentlyActive())        
+        self.assertTrue(dirs.atPath(os.path.join("docs", "html")).isCurrentlyActive())
+        with self.assertRaises(VerConError):
+            self.assertTrue(dirs.atPath("html").isCurrentlyActive())      
             
 
     def test_addDir(self):

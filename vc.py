@@ -919,7 +919,7 @@ class VerConDirectory():
                         pass
                     # are we going back up the tree?
                     else:
-                        currentpath = currentpath[:(level - newlevel)]
+                        currentpath = currentpath[:-(level - newlevel)]
                         
                     logger.debug("VerConDirectory constructor: calculated directory name: %r"%name)
 
@@ -967,7 +967,7 @@ class VerConDirectory():
             bits = path.split(os.sep)
             for b in bits:
                 if b not in location.children.keys():
-                    raise VerConError("Trying to find a file in a directory that was not initialized, what kind of joke is that")
+                    raise VerConError("Trying to find a file %s in a directory %s (bit %s) that was not initialized, what kind of joke is that? \n%s"%(name, path, b, "\n".join(self.Serialize(level=-1, debug=True))))
                 
                 location = location.children[b]
         
